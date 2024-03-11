@@ -1,0 +1,268 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Apporteur;
+use Carbon\Carbon;
+use App\Models\Client;
+use App\Models\Branche;
+use App\Models\Prospect;
+use App\Models\Compagnie;
+use App\Models\Contrat;
+use App\Models\TauxApporteur;
+use App\Models\TauxCompagnie;
+use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
+
+class SyncController extends Controller
+{
+
+    public function syncBranche(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        // Création de l'enregistrement avec la méthode create
+        $branche = Branche::create($data);
+
+        // Mise à jour de la valeur de sync à 1
+        $branche->update(['sync' => 1]);
+
+        if ($branche) {
+            $branches = Branche::where('id_entreprise', $data['id_entreprise'])->get();
+
+            return response()->json($branches);
+        }
+    }
+
+    public function syncProspect(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $prospectData) {
+            // Use updateOrCreate to create or update the Client model
+            Prospect::updateOrCreate(
+                ['uuidProspect' => $prospectData['uuidProspect']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'id_entreprise' => $prospectData['id_entreprise'],
+                    'nom_prospect' => $prospectData['nom_prospect'],
+                    'adresse_prospect' => $prospectData['adresse_prospect'],
+                    'postal_prospect' => $prospectData['postal_prospect'],
+                    'profession_prospect' => $prospectData['profession_prospect'],
+                    'tel_prospect' => $prospectData['tel_prospect'],
+                    'civilite' => $prospectData['civilite'],
+                    'email_prospect' => $prospectData['email_prospect'],
+                    'fax_prospect' => $prospectData['fax_prospect'],
+                    'user_id' => $prospectData['id'],
+                    'statut' => $prospectData['statut'],
+                    'uuidProspect' => $prospectData['uuidProspect'],
+                ]
+            );
+        }
+    }
+
+
+    public function syncClient(Request $request)
+    {
+
+        // Recuperer user
+
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $clientData) {
+            // Use updateOrCreate to create or update the Client model
+            Client::updateOrCreate(
+                ['uuidClient' => $clientData['uuidClient']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'id_entreprise' => $clientData['id_entreprise'],
+                    'numero_client' => $clientData['numero_client'],
+                    'nom_client' => $clientData['nom_client'],
+                    'adresse_client' => $clientData['adresse_client'],
+                    'postal_client' => $clientData['postal_client'],
+                    'profession_client' => $clientData['profession_client'],
+                    'tel_client' => $clientData['tel_client'],
+                    'civilite' => $clientData['civilite'],
+                    'email_client' => $clientData['email_client'],
+                    'fax_client' => $clientData['fax_client'],
+                    'user_id' => $clientData['user_id'],
+                ]
+            );
+        }
+    }
+
+
+
+
+    public function syncCompagnie(Request $request)
+    {
+        // Recuperer user
+        // $user =  JWTAuth::parseToken()->authenticate();
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $compagnieData) {
+            // Use updateOrCreate to create or update the Client model
+            Compagnie::updateOrCreate(
+                ['uuidCompagnie' => $compagnieData['uuidCompagnie']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'id_entreprise' => $compagnieData['id_entreprise'],
+                    'nom_compagnie' => $compagnieData['nom_compagnie'],
+                    'adresse_compagnie' => $compagnieData['adresse_compagnie'],
+                    'email_compagnie' => $compagnieData['email_compagnie'],
+                    'contact_compagnie' => $compagnieData['contact_compagnie'],
+                    'postal_compagnie' => $compagnieData['postal_compagnie'],
+                    'code_compagnie' => $compagnieData['code_compagnie'],
+                    'supprimer_compagnie' => $compagnieData['supprimer_compagnie'],
+                    'user_id' => $compagnieData['user_id'],
+                ]
+            );
+        }
+
+        // $compagnies = Compagnie::where('id_entreprise', $data['id_entreprise'])->get();
+
+        // return response()->json($compagnies);
+    }
+
+    public function syncTauxCompagnie(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $tauxcompagnieData) {
+            $branche = Branche::where('uuidBranche', $tauxcompagnieData['uuidBranche'])->first();
+            $compagnie = Compagnie::where('uuidCompagnie', $tauxcompagnieData['uuidCompagnie'])->first();
+
+            // Use updateOrCreate to create or update the Client model
+            TauxCompagnie::updateOrCreate(
+                ['uuidTauxCompagnie' => $tauxcompagnieData['uuidTauxCompagnie']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'uuidCompagnie' => $tauxcompagnieData['uuidCompagnie'],
+                    'tauxcomp' => $tauxcompagnieData['tauxcomp'],
+                    'uuidBranche' => $tauxcompagnieData['uuidBranche'],
+                    'id_branche' => $branche['id_branche'],
+                    'id_compagnie' => $compagnie['id_compagnie'],
+                    'id_entreprise' => $tauxcompagnieData['id_entreprise'],
+                ]
+            );
+        }
+    }
+
+    public function syncApporteur(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $apporteurData) {
+            // Use updateOrCreate to create or update the Client model
+            Apporteur::updateOrCreate(
+                ['uuidApporteur' => $apporteurData['uuidApporteur']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'id_entreprise' => $apporteurData['id_entreprise'],
+                    'nom_apporteur' => $apporteurData['nom_apporteur'],
+                    'email_apporteur' => $apporteurData['email_apporteur'],
+                    'adresse_apporteur' => $apporteurData['adresse_apporteur'],
+                    'contact_apporteur' => $apporteurData['contact_apporteur'],
+                    'code_apporteur' => $apporteurData['code_apporteur'],
+                    'code_postal' => $apporteurData['code_postal'],
+                    'supprimer_apporteur' => $apporteurData['supprimer_apporteur'],
+                    'user_id' => $apporteurData['id'],
+                ]
+            );
+        }
+
+       
+    }
+
+    public function syncTauxApporteur(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $tauxapporteureData) {
+            $branche = Branche::where('uuidBranche', $tauxapporteureData['uuidBranche'])->first();
+            $apporteur = Apporteur::where('uuidApporteur', $tauxapporteureData['uuidApporteur'])->first();
+            // Use updateOrCreate to create or update the Client model
+            TauxApporteur::updateOrCreate(
+                ['uuidTauxApporteur' => $tauxapporteureData['uuidTauxApporteur']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'uuidApporteur' => $tauxapporteureData['uuidApporteur'],
+                    'taux' => $tauxapporteureData['taux'],
+                    'uuidBranche' => $tauxapporteureData['uuidBranche'],
+                    'id_branche' => $branche['id_branche'],
+                    'id_apporteur' => $apporteur['id_apporteur'],
+                    'id_entreprise' => $tauxapporteureData['id_entreprise'],
+                ]
+            );
+        }
+    }
+
+    public function syncContrat(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $contratData) {
+            $compagnie = Compagnie::where('uuidCompagnie', $contratData['uuidCompagnie'])->first();
+            $apporteur = Apporteur::where('uuidApporteur', $contratData['uuidApporteur'])->first();
+            $client = Client::where('uuidClient', $contratData['uuidClient'])->first();
+            $branche = Branche::where('uuidBranche', $contratData['uuidBranche'])->first();
+            // Utilisation de updateOrCreate pour créer ou mettre à jour le modèle Contrat
+            Contrat::updateOrCreate(
+                ['uuidContrat' => $contratData['uuidContrat']], // Identifiant unique
+                [
+                    'sync' => 1,
+                    'id_branche' => $branche['id_branche'],
+                    'id_client' => $client['id_client'],
+                    'id_compagnie' => $compagnie['id_compagnie'],
+                    'id_apporteur' => $apporteur['id_apporteur'],
+                    'numero_police' => $contratData['numero_police'],
+                    'souscrit_le' => $contratData['souscrit_le'],
+                    'effet_police' => $contratData['effet_police'],
+                    'heure_police' => $contratData['heure_police'],
+                    'expire_le' => $contratData['expire_le'],
+                    'reconduction' => $contratData['reconduction'],
+                    'prime_nette' => $contratData['prime_nette'],
+                    'accessoires' => $contratData['accessoires'],
+                    'cfga' => $contratData['cfga'],
+                    'taxes_totales' => $contratData['taxes_totales'],
+                    'primes_ttc' => $contratData['primes_ttc'],
+                    'commission_courtier' => $contratData['commission_courtier'],
+                    'gestion' => $contratData['gestion'],
+                    'commission_apporteur' => $contratData['commission_apporteur'],
+                    'solde' => $contratData['solde'],
+                    'reverse' => $contratData['reverse'],
+                    'user_id' => $contratData['user_id'],
+                    'supprimer_contrat' => $contratData['supprimer_contrat'],
+                ]
+            );
+        }
+        
+        // $contrats = Contrat::where('id_entreprise', $data['id_entreprise'])->get();
+
+        // return response()->json($contrats);
+    }
+
+    public function syncAvenant()
+    {
+    }
+
+    public function syncAutomobile()
+    {
+    }
+
+    public function syncGarantie()
+    {
+    }
+
+    public function syncSinistre()
+    {
+    }
+}
