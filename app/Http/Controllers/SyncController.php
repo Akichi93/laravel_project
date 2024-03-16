@@ -122,10 +122,6 @@ class SyncController extends Controller
                 ]
             );
         }
-
-        // $compagnies = Compagnie::where('id_entreprise', $data['id_entreprise'])->get();
-
-        // return response()->json($compagnies);
     }
 
     public function syncTauxCompagnie(Request $request)
@@ -176,8 +172,6 @@ class SyncController extends Controller
                 ]
             );
         }
-
-       
     }
 
     public function syncTauxApporteur(Request $request)
@@ -239,19 +233,59 @@ class SyncController extends Controller
                     'commission_apporteur' => $contratData['commission_apporteur'],
                     'solde' => $contratData['solde'],
                     'reverse' => $contratData['reverse'],
-                    'user_id' => $contratData['user_id'],
+                    'user_id' => $contratData['id'],
                     'supprimer_contrat' => $contratData['supprimer_contrat'],
                 ]
             );
         }
-        
-        // $contrats = Contrat::where('id_entreprise', $data['id_entreprise'])->get();
-
-        // return response()->json($contrats);
     }
 
-    public function syncAvenant()
+    public function syncAvenant(Request $request)
     {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $AvenantData) {
+            $branche = Branche::where('uuidBranche', $AvenantData['uuidBranche'])->first();
+            $apporteur = Apporteur::where('uuidApporteur', $AvenantData['uuidApporteur'])->first();
+            // Use updateOrCreate to create or update the Client model
+            TauxApporteur::updateOrCreate(
+                ['uuidTauxApporteur' => $AvenantData['uuidTauxApporteur']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'uuidAvenant' => $AvenantData['uuidApporteur'],
+                    'uuidContrat' => $AvenantData['uuidContrat'],
+                    'id_contrat' => $AvenantData['id_contrat'],
+                    'uuidCompagnie' => $AvenantData['uuidCompagnie'],
+                    'uuidApporteur' => $AvenantData['uuidApporteur'],
+                    'annee' => $AvenantData['annee'],
+                    'mois' => $AvenantData['mois'],
+                    'type' => $AvenantData['type'],
+                    'prime_ttc' => $AvenantData['prime_ttc'],
+                    'retrocession' => $AvenantData['retrocession'],
+                    'commission' => $AvenantData['commission'],
+                    'commission_courtier' => $AvenantData['commission_courtier'],
+                    'prise_charge' => $AvenantData['prise_charge'],
+                    'ristourne' => $AvenantData['ristourne'],
+                    'prime_nette' => $AvenantData['prime_nette'],
+                    'date_emission' => $AvenantData['date_emission'],
+                    'date_debut' => $AvenantData['date_debut'],
+                    'date_fin' => $AvenantData['date_fin'],
+                    'accessoires' => $AvenantData['accessoires'],
+                    'frais_courtier' => $AvenantData['frais_courtier'],
+                    'cfga' => $AvenantData['cfga'],
+                    'taxes_totales' => $AvenantData['taxes_totales'],
+                    'id_entreprise' => $AvenantData['id_entreprise'],
+                    'payer_courtier' => $AvenantData['payer_courtier'],
+                    'payer_apporteur' => $AvenantData['payer_apporteur'],
+                    'user_id' => $AvenantData['user_id'],
+                    'supprimer_avenant' => $AvenantData['supprimer_avenant'],
+                    'code_avenant' => $AvenantData['code_avenant'],
+                    'solder' => $AvenantData['solder'],
+                    'reverser' => $AvenantData['reverser'],
+                ]
+            );
+        }
     }
 
     public function syncAutomobile()

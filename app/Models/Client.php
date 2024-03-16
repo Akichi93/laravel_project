@@ -26,8 +26,6 @@ class Client extends Model
         'user_id',
         'uuidClient',
         'sync',
-        
-        'sync',
     ];
 
     public function relances() {

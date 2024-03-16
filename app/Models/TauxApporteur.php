@@ -16,6 +16,7 @@ class TauxApporteur extends Model
         'id_branche',
         'taux',
         'uuidApporteur',
+        'uuidTauxApporteur',
         'uuidBranche',
         'id_entreprise',
         'sync',
