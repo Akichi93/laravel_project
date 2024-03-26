@@ -240,7 +240,8 @@ class ProspectsController extends Controller
     {
         $user =  JWTAuth::parseToken()->authenticate();
 
-        $prospects = Prospect::where('id_entreprise', $user->id_entreprise)
+        $prospects = Prospect::select('adresse_prospect', 'civilite', 'email_prospect', 'etat', 'fax_prospect', 'id_entreprise', 'nom_prospect', 'user_id as id', 'profession_prospect', 'postal_prospect', 'statut', 'supprimer_prospect', 'sync', 'tel_prospect', 'uuidProspect')
+            ->where('id_entreprise', $user->id_entreprise)
             // ->where('supprimer_prospect', 0)
             ->get();
 

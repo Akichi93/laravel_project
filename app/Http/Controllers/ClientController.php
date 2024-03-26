@@ -16,7 +16,7 @@ class ClientController extends Controller
 {
     public function clientList(Request $request)
     {
-    
+
         $user =  JWTAuth::parseToken()->authenticate();
         $data = strlen($request->q);
         if ($data > 0) {
@@ -114,7 +114,8 @@ class ClientController extends Controller
     public function getClient()
     {
         $user =  JWTAuth::parseToken()->authenticate();
-        $clients = Client::where('id_entreprise', $user->id_entreprise)->latest()->get();
+        $clients = Client::select('uuidClient', 'adresse_client', 'civilite', 'email_client', 'fax_client', 'id_entreprise', 'nom_client', 'numero_client', 'postal_client', 'profession_client', 'supprimer_client', 'sync', 'tel_client','user_id')
+            ->where('id_entreprise', $user->id_entreprise)->get();
 
         return response()->json($clients);
     }

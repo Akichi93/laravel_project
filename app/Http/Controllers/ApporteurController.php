@@ -198,7 +198,7 @@ class ApporteurController extends Controller
         $user =  JWTAuth::parseToken()->authenticate();
         $apporteurs = TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
             ->join("apporteurs", 'taux_apporteurs.id_apporteur', '=', 'apporteurs.id_apporteur')
-            ->where('taux_apporteurs.id_entreprise',$user->id_entreprise)
+            ->where('taux_apporteurs.id_entreprise', $user->id_entreprise)
             ->get();
         return response()->json($apporteurs);
     }
@@ -289,9 +289,10 @@ class ApporteurController extends Controller
     {
         $user =  JWTAuth::parseToken()->authenticate();
 
-        $apporteurs = Apporteur::orderBy('id_apporteur', 'DESC')
+        $apporteurs = Apporteur::select('adresse_apporteur', 'code_apporteur', 'code_postal', 'contact_apporteur', 'email_apporteur', 'user_id as id', 'id_entreprise', 'nom_apporteur', 'supprimer_apporteur', 'sync', 'uuidApporteur')
+            // ->orderBy('id_apporteur', 'DESC')
             ->where('id_entreprise', $user->id_entreprise)
-            ->where('supprimer_apporteur', 0)
+            // ->where('supprimer_apporteur', 0)
             ->get();
 
         // $apporteurs = $this->apporteur->getApporteur();

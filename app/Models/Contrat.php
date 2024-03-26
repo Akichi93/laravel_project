@@ -41,6 +41,8 @@ class Contrat extends Model
         'uuidCompagnie',
         'uuidApporteur',
         'uuidBranche',
+        'uuidContrat',
+        'sync'
     ];
 
     // protected $casts = [

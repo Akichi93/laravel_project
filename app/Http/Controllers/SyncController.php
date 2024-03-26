@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Apporteur;
 use Carbon\Carbon;
 use App\Models\Client;
+use App\Models\Avenant;
 use App\Models\Branche;
-use App\Models\Prospect;
-use App\Models\Compagnie;
 use App\Models\Contrat;
+use App\Models\Prospect;
+use App\Models\Apporteur;
+use App\Models\Compagnie;
+use Illuminate\Http\Request;
 use App\Models\TauxApporteur;
 use App\Models\TauxCompagnie;
-use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class SyncController extends Controller
@@ -57,7 +58,7 @@ class SyncController extends Controller
                     'fax_prospect' => $prospectData['fax_prospect'],
                     'user_id' => $prospectData['id'],
                     'statut' => $prospectData['statut'],
-                    'uuidProspect' => $prospectData['uuidProspect'],
+                    'etat' => $prospectData['etat'],
                 ]
             );
         }
@@ -66,9 +67,6 @@ class SyncController extends Controller
 
     public function syncClient(Request $request)
     {
-
-        // Recuperer user
-
         // Données à synchroniser
         $data = $request->all();
 
@@ -235,6 +233,8 @@ class SyncController extends Controller
                     'reverse' => $contratData['reverse'],
                     'user_id' => $contratData['id'],
                     'supprimer_contrat' => $contratData['supprimer_contrat'],
+                    'id_entreprise' => $contratData['id_entreprise'],
+                    'frais_courtier' => $contratData['frais_courtier'],
                 ]
             );
         }
@@ -246,16 +246,15 @@ class SyncController extends Controller
         $data = $request->all();
 
         foreach ($data as $AvenantData) {
-            $branche = Branche::where('uuidBranche', $AvenantData['uuidBranche'])->first();
-            $apporteur = Apporteur::where('uuidApporteur', $AvenantData['uuidApporteur'])->first();
+            $contrat = Contrat::where('uuidContrat', $AvenantData['uuidContrat'])->first();
             // Use updateOrCreate to create or update the Client model
-            TauxApporteur::updateOrCreate(
-                ['uuidTauxApporteur' => $AvenantData['uuidTauxApporteur']], // Unique identifier
+            Avenant::updateOrCreate(
+                ['uuidAvenant' => $AvenantData['uuidAvenant']], // Unique identifier
                 [
                     'sync' => 1,
-                    'uuidAvenant' => $AvenantData['uuidApporteur'],
+                    'uuidAvenant' => $AvenantData['uuidAvenant'],
                     'uuidContrat' => $AvenantData['uuidContrat'],
-                    'id_contrat' => $AvenantData['id_contrat'],
+                    'id_contrat' => $contrat['id_contrat'],
                     'uuidCompagnie' => $AvenantData['uuidCompagnie'],
                     'uuidApporteur' => $AvenantData['uuidApporteur'],
                     'annee' => $AvenantData['annee'],
@@ -278,7 +277,7 @@ class SyncController extends Controller
                     'id_entreprise' => $AvenantData['id_entreprise'],
                     'payer_courtier' => $AvenantData['payer_courtier'],
                     'payer_apporteur' => $AvenantData['payer_apporteur'],
-                    'user_id' => $AvenantData['user_id'],
+                    'user_id' => $AvenantData['id'],
                     'supprimer_avenant' => $AvenantData['supprimer_avenant'],
                     'code_avenant' => $AvenantData['code_avenant'],
                     'solder' => $AvenantData['solder'],

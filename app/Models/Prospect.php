@@ -24,5 +24,7 @@ class Prospect extends Model
         'fax_prospect',
         'user_id',
         'sync',
+        'etat',
+        'statut',
     ];
 }

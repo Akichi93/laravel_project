@@ -225,6 +225,7 @@ Route::group([
         Route::put('change/reglement/{id}', 'changeReglement');
         Route::patch('sinistres/supprime/{id_sinistre}', 'supprime');
         Route::get('sinistres/edit/{id_sinistre}', 'edit');
+        Route::get('getsinistres', 'getListSinistres'); // obtenir les garanties
     });
 
     // Dashboard

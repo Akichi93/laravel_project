@@ -333,4 +333,19 @@ class SinistreController extends Controller
 
         return response()->json($sinistres);
     }
+
+    public function getListSinistres()
+    {
+        $user =  JWTAuth::parseToken()->authenticate();
+        $sinistres = Sinistre::select('clients.nom_client', 'numero_sinistre', 'branches.nom_branche', 'date_survenance', 'date_ouverture', 'sinistres.etat')
+            ->join("contrats", 'sinistres.id_contrat', '=', 'contrats.id_contrat')
+            ->join("clients", 'contrats.id_client', '=', 'clients.id_client')
+            ->join("branches", 'contrats.id_branche', '=', 'branches.id_branche')
+            ->where('sinistres.id_entreprise', $user->id_entreprise)
+            ->where('supprimer_sinistre', '=', '0')
+            ->latest('sinistres.created_at')
+            ->get();
+
+        return response()->json($sinistres);
+    }
 }

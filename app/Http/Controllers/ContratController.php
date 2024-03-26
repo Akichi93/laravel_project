@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use Log;
 use App\Models\Client;
 use App\Models\Avenant;
 use App\Models\Branche;
 use App\Models\Contrat;
 use App\Models\Garantie;
 use App\Models\Sinistre;
+use App\Models\Apporteur;
+use App\Models\Compagnie;
 use App\Models\Automobile;
 use App\Models\FileAvenant;
 use App\Models\TypeGarantie;
@@ -17,12 +20,10 @@ use App\Models\TauxApporteur;
 use App\Models\TauxCompagnie;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Http\Requests\ContratRequest;
 use App\Repositories\ContratRepository;
 use App\Http\Requests\AutomobileRequest;
-use App\Http\Requests\ContratRequest;
 use App\Http\Requests\StoreContratRequest;
-use App\Models\Apporteur;
-use App\Models\Compagnie;
 use Symfony\Component\HttpFoundation\Response;
 
 class ContratController extends Controller
@@ -921,12 +922,14 @@ class ContratController extends Controller
     {
 
         $user =  JWTAuth::parseToken()->authenticate();
-        $contrats = Contrat::join("clients", 'contrats.id_client', '=', 'clients.id_client')
+        $contrats = Contrat::select('accessoires', 'cfga', 'commission_apporteur', 'commission_courtier', 'effet_police', 'expire_le', 'frais_courtier', 'gestion', 'heure_police', 'contrats.user_id as id', 'contrats.id_entreprise as id_entreprise', 'apporteurs.nom_apporteur', 'branches.nom_branche as nom_branche', 'clients.nom_client as nom_client', 'compagnies.nom_compagnie as nom_compagnie', 'clients.numero_client as numero_client', 'numero_police', 'prime_nette', 'primes_ttc', 'reconduction', 'reverse', 'solde', 'souscrit_le', 'supprimer_contrat', 'contrats.sync', 'taxes_totales', 'apporteurs.uuidApporteur as uuidApporteur', 'branches.uuidBranche as uuidBranche', 'clients.uuidClient as uuidClient', 'compagnies.uuidCompagnie as uuidCompagnie', 'contrats.uuidContrat as uuidContrat')
+            ->join("clients", 'contrats.id_client', '=', 'clients.id_client')
+            ->join("apporteurs", 'contrats.id_apporteur', '=', 'apporteurs.id_apporteur')
             ->join("compagnies", 'contrats.id_compagnie', '=', 'compagnies.id_compagnie')
             ->join("branches", 'contrats.id_branche', '=', 'branches.id_branche')
             ->where('contrats.id_entreprise', $user->id_entreprise)
-            ->where('supprimer_contrat', '=', '0')
-            ->latest('contrats.created_at')
+            // ->where('supprimer_contrat', '=', '0')
+            // ->latest('contrats.created_at')
             ->get();
 
         // $compagnies = $this->compagnie->getCompagnie();
@@ -964,19 +967,31 @@ class ContratController extends Controller
     public function getAvenants()
     {
         $user =  JWTAuth::parseToken()->authenticate();
-        $avenants = Avenant::where('id_entreprise', $user->id_entreprise)->get();
+        // $avenants = Avenant::where('id_entreprise', $user->id_entreprise)->get();
+
+        $avenants = Avenant::select('avenants.uuidContrat', 'annee', 'mois', 'clients.nom_client', 'branches.nom_branche', 'compagnies.nom_compagnie', 'contrats.numero_police', 'avenants.prime_ttc', 'avenants.retrocession', 'avenants.commission', 'avenants.commission_courtier', 'avenants.prise_charge', 'avenants.ristourne', 'avenants.prime_nette', 'date_emission', 'date_debut', 'date_fin', 'avenants.accessoires', 'avenants.frais_courtier', 'avenants.cfga', 'avenants.taxes_totales', 'code_avenant', 'uuidAvenant', 'avenants.uuidApporteur', 'avenants.uuidCompagnie', 'solder', 'reverser','payer_apporteur','payer_courtier','supprimer_avenant','avenants.id_entreprise')
+            ->join("contrats", 'avenants.id_contrat', '=', 'contrats.id_contrat')
+            ->join("clients", 'contrats.id_client', '=', 'clients.id_client')
+            ->join("branches", 'contrats.id_branche', '=', 'branches.id_branche')
+            ->join("compagnies", 'contrats.id_compagnie', '=', 'compagnies.id_compagnie')
+            ->where('avenants.id_entreprise', $user->id_entreprise)
+            // ->where('supprimer_sinistre', '=', '0')
+            // ->latest('sinistres.created_at')
+            ->get();
 
         return response()->json($avenants);
     }
 
-    public function getAutomobiles(){
+    public function getAutomobiles()
+    {
         $user =  JWTAuth::parseToken()->authenticate();
         $automobiles = Automobile::where('id_entreprise', $user->id_entreprise)->get();
 
         return response()->json($automobiles);
     }
 
-    public function getGaranties(){
+    public function getGaranties()
+    {
         $user =  JWTAuth::parseToken()->authenticate();
         $garanties = Garantie::where('id_entreprise', $user->id_entreprise)->get();
 

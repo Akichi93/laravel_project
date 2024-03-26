@@ -152,7 +152,7 @@ class CompagnieController extends Controller
         $user =  JWTAuth::parseToken()->authenticate();
         $compagnies = TauxCompagnie::join("branches", 'taux_compagnies.id_branche', '=', 'branches.id_branche')
             ->join("compagnies", 'taux_compagnies.id_compagnie', '=', 'compagnies.id_compagnie')
-            ->where('taux_compagnies.id_entreprise',$user->id_entreprise)
+            ->where('taux_compagnies.id_entreprise', $user->id_entreprise)
             ->get();
 
         return response()->json($compagnies);
@@ -252,8 +252,9 @@ class CompagnieController extends Controller
     {
 
         $user =  JWTAuth::parseToken()->authenticate();
-        $compagnies = Compagnie::where('id_entreprise', $user->id_entreprise)
-            ->where('supprimer_compagnie', '=', '0')
+        $compagnies = Compagnie::select('adresse_compagnie', 'code_compagnie', 'contact_compagnie', 'email_compagnie', 'id_entreprise', 'nom_compagnie', 'postal_compagnie', 'supprimer_compagnie', 'sync', 'user_id', 'uuidCompagnie')
+            ->where('id_entreprise', $user->id_entreprise)
+            // ->where('supprimer_compagnie', '=', '0')
             ->get();
 
         // $compagnies = $this->compagnie->getCompagnie();
