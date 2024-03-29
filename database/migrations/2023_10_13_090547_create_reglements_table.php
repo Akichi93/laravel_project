@@ -29,8 +29,8 @@ class CreateReglementsTable extends Migration
             $table->integer('montant');
             $table->date('date_reglement');
 
-            $table->unsignedBigInteger('id_user');
-            $table->foreign('id_user')
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')
                 ->references('id')
                 ->on('users')
                 ->onDelete('cascade');

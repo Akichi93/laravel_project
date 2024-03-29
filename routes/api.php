@@ -217,8 +217,8 @@ Route::group([
         Route::get('get/sinistres/{q?}', 'getSinistres');
         Route::get('get/sinistre', 'getSinistre');
         Route::get('get/apporteur', 'getApporteur');
-        Route::get('get/reglements', 'getReglements');
-        Route::get('get/reglement', 'getReglement');
+        Route::get('get/reglements', 'getDataReglements');
+        Route::get('get/reglement', 'getDataReglement');
         Route::post('add/piece', 'addPiece');
         Route::put('update-sinistre-status/{id}', 'updateSinistreStatus');
         Route::post('add/reglement', 'addReglement');
@@ -226,6 +226,7 @@ Route::group([
         Route::patch('sinistres/supprime/{id_sinistre}', 'supprime');
         Route::get('sinistres/edit/{id_sinistre}', 'edit');
         Route::get('getsinistres', 'getListSinistres'); // obtenir les garanties
+        Route::get('getreglements', 'getReglements'); // obtenir les garanties
     });
 
     // Dashboard
@@ -339,6 +340,7 @@ Route::group([
         Route::post('sync-avenants', 'syncAvenant');
         Route::post('sync-automobiles', 'syncAutomobile');
         Route::post('sync-garanties', 'syncGarantie');
-        Route::post('sync-sinistres', 'syncSinistres');
+        Route::post('sync-sinistres', 'syncSinistre');
+        Route::post('sync-regelements', 'syncReglement');
     });
 });

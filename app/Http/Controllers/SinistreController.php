@@ -250,7 +250,7 @@ class SinistreController extends Controller
         return response()->json(['success' => "Reglement ajouté avec succès", 'id_sinistre' => $data['id_sinistre']]);
     }
 
-    public function getReglements(Request $request)
+    public function getDataReglements(Request $request)
     {
         $reglements_compagnie = Reglement::where('id_sinistre', $request->sinistre)->get();
         $reglements_compagnie_sum = Reglement::where('id_sinistre', $request->sinistre)->sum('montant');
@@ -258,7 +258,7 @@ class SinistreController extends Controller
         $reglements_client = Reglement::where('id_sinistre', $request->sinistre)->get();
         return response()->json(["reglements_compagnie" => $reglements_compagnie, "reglements_client" => $reglements_client, "reglements_compagnie_sum" => $reglements_compagnie_sum, "reglements_client_sum" => $reglements_client_sum]);
     }
-    public function getReglement(Request $request)
+    public function getDataReglement(Request $request)
     {
         $reglement = Reglement::where('id_reglement',  $request->id)->where('type_reglement', $request->type)->where('id_sinistre', $request->sinistre)->get()->first();
         return response()->json(["reglement" => $reglement]);
@@ -347,5 +347,13 @@ class SinistreController extends Controller
             ->get();
 
         return response()->json($sinistres);
+    }
+
+    public function getReglements()
+    {
+        $user =  JWTAuth::parseToken()->authenticate();
+        $reglements = Reglement::where('id_entreprise', $user->id_entreprise)->get();
+
+        return response()->json($reglements);
     }
 }

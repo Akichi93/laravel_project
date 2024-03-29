@@ -969,7 +969,7 @@ class ContratController extends Controller
         $user =  JWTAuth::parseToken()->authenticate();
         // $avenants = Avenant::where('id_entreprise', $user->id_entreprise)->get();
 
-        $avenants = Avenant::select('avenants.uuidContrat', 'annee', 'mois', 'clients.nom_client', 'branches.nom_branche', 'compagnies.nom_compagnie', 'contrats.numero_police', 'avenants.prime_ttc', 'avenants.retrocession', 'avenants.commission', 'avenants.commission_courtier', 'avenants.prise_charge', 'avenants.ristourne', 'avenants.prime_nette', 'date_emission', 'date_debut', 'date_fin', 'avenants.accessoires', 'avenants.frais_courtier', 'avenants.cfga', 'avenants.taxes_totales', 'code_avenant', 'uuidAvenant', 'avenants.uuidApporteur', 'avenants.uuidCompagnie', 'solder', 'reverser','payer_apporteur','payer_courtier','supprimer_avenant','avenants.id_entreprise')
+        $avenants = Avenant::select('avenants.uuidContrat', 'annee', 'mois', 'clients.nom_client', 'branches.nom_branche', 'compagnies.nom_compagnie', 'contrats.numero_police', 'avenants.prime_ttc', 'avenants.retrocession', 'avenants.commission', 'avenants.commission_courtier', 'avenants.prise_charge', 'avenants.ristourne', 'avenants.prime_nette', 'date_emission', 'date_debut', 'date_fin', 'avenants.accessoires', 'avenants.frais_courtier', 'avenants.cfga', 'avenants.taxes_totales', 'code_avenant', 'uuidAvenant', 'avenants.uuidApporteur', 'avenants.uuidCompagnie', 'solder', 'reverser', 'payer_apporteur', 'payer_courtier', 'supprimer_avenant', 'avenants.id_entreprise', 'avenants.sync')
             ->join("contrats", 'avenants.id_contrat', '=', 'contrats.id_contrat')
             ->join("clients", 'contrats.id_client', '=', 'clients.id_client')
             ->join("branches", 'contrats.id_branche', '=', 'branches.id_branche')
@@ -985,7 +985,10 @@ class ContratController extends Controller
     public function getAutomobiles()
     {
         $user =  JWTAuth::parseToken()->authenticate();
-        $automobiles = Automobile::where('id_entreprise', $user->id_entreprise)->get();
+        $automobiles = Automobile::select('uuidAutomobile', 'automobiles.uuidContrat', 'numero_immatriculation', 'date_circulation', 'identification_proprietaire', 'adresse_proprietaire', 'zone', 'categorie', 'marque', 'genre', 'type', 'carosserie', 'couleur', 'energie', 'place', 'puissance', 'charge', 'valeur_neuf', 'valeur_venale', 'categorie_socio_pro', 'permis', 'option', 'entree', 'automobiles.prime_nette', 'automobiles.accessoires', 'automobiles.frais_courtier', 'automobiles.cfga', 'automobiles.taxes_totales', 'automobiles.commission_courtier', 'automobiles.commission_apporteur', 'automobiles.gestion', 'automobiles.primes_ttc', 'automobiles.sync', 'supprimer_automobile', 'automobiles.id_entreprise')
+            ->join("contrats", 'automobiles.id_contrat', '=', 'contrats.id_contrat')
+            ->where('id_entreprise', $user->id_entreprise)
+            ->get();
 
         return response()->json($automobiles);
     }
@@ -993,7 +996,10 @@ class ContratController extends Controller
     public function getGaranties()
     {
         $user =  JWTAuth::parseToken()->authenticate();
-        $garanties = Garantie::where('id_entreprise', $user->id_entreprise)->get();
+        $garanties = Garantie::select('uuiGarantie', 'garanties.uuidAutomobile', 'id_automobile', 'automobiles.id_automobile', 'nom_garantie', 'automobiles.sync')
+            ->join("automobiles", 'garanties.id_automobile', '=', 'automobiles.id_automobile')
+            ->where('id_entreprise', $user->id_entreprise)
+            ->get();
 
         return response()->json($garanties);
     }

@@ -9,7 +9,11 @@ use App\Models\Branche;
 use App\Models\Contrat;
 use App\Models\Prospect;
 use App\Models\Apporteur;
+use App\Models\Automobile;
 use App\Models\Compagnie;
+use App\Models\Garantie;
+use App\Models\Reglement;
+use App\Models\Sinistre;
 use Illuminate\Http\Request;
 use App\Models\TauxApporteur;
 use App\Models\TauxCompagnie;
@@ -252,7 +256,7 @@ class SyncController extends Controller
                 ['uuidAvenant' => $AvenantData['uuidAvenant']], // Unique identifier
                 [
                     'sync' => 1,
-                    'uuidAvenant' => $AvenantData['uuidAvenant'],
+                    // 'uuidAvenant' => $AvenantData['uuidAvenant'],
                     'uuidContrat' => $AvenantData['uuidContrat'],
                     'id_contrat' => $contrat['id_contrat'],
                     'uuidCompagnie' => $AvenantData['uuidCompagnie'],
@@ -287,15 +291,141 @@ class SyncController extends Controller
         }
     }
 
-    public function syncAutomobile()
+    public function syncAutomobile(Request $request)
     {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $AutomobileData) {
+            $contrat = Contrat::where('uuidContrat', $AutomobileData['uuidContrat'])->first();
+            // Use updateOrCreate to create or update the Client model
+            Automobile::updateOrCreate(
+                ['uuidAutomobile' => $AutomobileData['uuidAutomobile']], // Unique identifier
+                [
+                    'sync' => 1,
+                    //   'uuidAutomobile' => $AutomobileData['uuidAutomobile'],
+                    'uuidContrat' => $AutomobileData['uuidContrat'],
+                    'numero_immatriculation' => $contrat['numero_immatriculation'],
+                    'date_circulation' => $AutomobileData['date_circulation'],
+                    'date_circulation' => $AutomobileData['date_circulation'],
+                    'categorie' => $AutomobileData['categorie'],
+                    'marque' => $AutomobileData['marque'],
+                    'genre' => $AutomobileData['genre'],
+                    'type' => $AutomobileData['type'],
+                    'carosserie' => $AutomobileData['carosserie'],
+                    'couleur' => $AutomobileData['couleur'],
+                    'option' => $AutomobileData['option'],
+                    'entree' => $AutomobileData['entree'],
+                    'energie' => $AutomobileData['energie'],
+                    'place' => $AutomobileData['place'],
+                    'puissance' => $AutomobileData['puissance'],
+                    'charge' => $AutomobileData['charge'],
+                    'valeur_neuf' => $AutomobileData['valeur_neuf'],
+                    'valeur_venale' => $AutomobileData['valeur_venale'],
+                    'categorie_socio_pro' => $AutomobileData['categorie_socio_pro'],
+                    'permis' => $AutomobileData['permis'],
+                    'prime_nette' => $AutomobileData['prime_nette'],
+                    'frais_courtier' => $AutomobileData['frais_courtier'],
+                    'accesoires' => $AutomobileData['accesoires'],
+                    'cfga' => $AutomobileData['cfga'],
+                    'taxes_totales' => $AutomobileData['taxes_totales'],
+                    'prime_ttc' => $AutomobileData['prime_ttc'],
+                    'commission_courtier' => $AutomobileData['commission_courtier'],
+                    'gestion' => $AutomobileData['gestion'],
+                    'commission_apporteur' => $AutomobileData['commission_apporteur'],
+                    'type_garantie' => $AutomobileData['type_garantie'],
+                    'zone' => $AutomobileData['zone'],
+                    'id_contrat' => $contrat['id_contrat'],
+                    'id_entreprise' => $AutomobileData['id_entreprise'],
+                ]
+            );
+        }
     }
 
-    public function syncGarantie()
+    public function syncGarantie(Request $request)
     {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $garantieData) {
+            $auto = Automobile::where('uuidAutomobile', $garantieData['uuidAutomobile'])->first();
+
+
+            Garantie::updateOrCreate(
+                ['uuidGarantie' => $garantieData['uuidGarantie']],
+                [
+                    'sync' => 1,
+                    'uuidAutomobile' => $garantieData['uuidAutomobile'],
+                    'nom_garantie' => $garantieData['nom_garantie'],
+                    'id_automobile' => $auto['id_automobile'],
+                    'id_entreprise' => $garantieData['id_entreprise'],
+                ]
+            );
+        }
     }
 
-    public function syncSinistre()
+    public function syncSinistre(Request $request)
     {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $sinistreData) {
+            $contrat = Contrat::where('uuidContrat', $sinistreData['uuidContrat'])->first();
+
+
+            Sinistre::updateOrCreate(
+                ['uuidSinistre' => $sinistreData['uuidSinistre']],
+                [
+                    'sync' => 1,
+                    'id_contrat' => $contrat['id_contrat'],
+                    'date_survenance' => $sinistreData['date_survenance'],
+                    'heure' => $sinistreData['heure'],
+                    'date_ouverture' => $sinistreData['date_ouverture'],
+                    'date_decla_compagnie' => $sinistreData['date_decla_compagnie'],
+                    'numero_sinistre' => $sinistreData['numero_sinistre'],
+                    'reference_compagnie' => $sinistreData['reference_compagnie'],
+                    'gestion_compagnie' => $sinistreData['gestion_compagnie'],
+                    'materiel_sinistre' => $sinistreData['materiel_sinistre'],
+                    'ipp' => $sinistreData['ipp'],
+                    'garantie_applique' => $sinistreData['garantie_applique'],
+                    'recours_sinistre' => $sinistreData['recours_sinistre'],
+                    'date_mission' => $sinistreData['date_mission'],
+                    'accident_sinistre' => $sinistreData['accident_sinistre'],
+                    'lieu_sinistre' => $sinistreData['lieu_sinistre'],
+                    'expert' => $sinistreData['expert'],
+                    'commentaire_sinistre' => $sinistreData['commentaire_sinistre'],
+                    'etat' => $sinistreData['etat'],
+                    'id_entreprise' => $sinistreData['id_entreprise'],
+                    'user_id' => $sinistreData['user_id'],
+                    'supprimer_sinistre' => $sinistreData['supprimer_sinistre'],
+                ]
+            );
+        }
+    }
+
+    public function syncReglement(Request $request)
+    {
+        $data = $request->all();
+
+        foreach ($data as $sinistreData) {
+            $sinistre = Sinistre::where('uuidContrat', $sinistreData['uuidContrat'])->first();
+
+
+            Reglement::updateOrCreate(
+                ['uuidReglement' => $sinistreData['uuidReglement']],
+                [
+                    'sync' => 1,
+                    'id_sinistre' => $sinistre['id_sinistre'],
+                    'type_reglement' => $sinistreData['type_reglement'],
+                    'nom' => $sinistreData['nom'],
+                    'mode' => $sinistreData['mode'],
+                    'montant' => $sinistreData['montant'],
+                    'date_reglement' => $sinistreData['numero_sinistre'],
+                    'user_id' => $sinistreData['user_id'],
+                    'supprimer_reglement' => $sinistreData['supprimer_reglement'],              
+                    'id_entreprise' => $sinistreData['id_entreprise'],
+                ]
+            );
+        }
     }
 }
