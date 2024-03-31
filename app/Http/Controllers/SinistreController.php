@@ -258,6 +258,7 @@ class SinistreController extends Controller
         $reglements_client = Reglement::where('id_sinistre', $request->sinistre)->get();
         return response()->json(["reglements_compagnie" => $reglements_compagnie, "reglements_client" => $reglements_client, "reglements_compagnie_sum" => $reglements_compagnie_sum, "reglements_client_sum" => $reglements_client_sum]);
     }
+    
     public function getDataReglement(Request $request)
     {
         $reglement = Reglement::where('id_reglement',  $request->id)->where('type_reglement', $request->type)->where('id_sinistre', $request->sinistre)->get()->first();

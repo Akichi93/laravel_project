@@ -985,9 +985,9 @@ class ContratController extends Controller
     public function getAutomobiles()
     {
         $user =  JWTAuth::parseToken()->authenticate();
-        $automobiles = Automobile::select('uuidAutomobile', 'automobiles.uuidContrat', 'numero_immatriculation', 'date_circulation', 'identification_proprietaire', 'adresse_proprietaire', 'zone', 'categorie', 'marque', 'genre', 'type', 'carosserie', 'couleur', 'energie', 'place', 'puissance', 'charge', 'valeur_neuf', 'valeur_venale', 'categorie_socio_pro', 'permis', 'option', 'entree', 'automobiles.prime_nette', 'automobiles.accessoires', 'automobiles.frais_courtier', 'automobiles.cfga', 'automobiles.taxes_totales', 'automobiles.commission_courtier', 'automobiles.commission_apporteur', 'automobiles.gestion', 'automobiles.primes_ttc', 'automobiles.sync', 'supprimer_automobile', 'automobiles.id_entreprise')
+        $automobiles = Automobile::select('uuidAutomobile', 'automobiles.uuidContrat', 'numero_immatriculation', 'date_circulation', 'identification_proprietaire', 'adresse_proprietaire', 'zone', 'categorie', 'marque', 'genre', 'type', 'carosserie', 'couleur', 'energie', 'place', 'puissance', 'charge', 'valeur_neuf', 'valeur_venale', 'categorie_socio_pro', 'permis', 'option', 'entree', 'automobiles.prime_nette', 'automobiles.accessoires', 'automobiles.frais_courtier', 'automobiles.cfga', 'automobiles.taxes_totales', 'automobiles.commission_courtier', 'automobiles.commission_apporteur', 'automobiles.gestion', 'automobiles.primes_ttc', 'automobiles.sync', 'automobiles.id_entreprise')
             ->join("contrats", 'automobiles.id_contrat', '=', 'contrats.id_contrat')
-            ->where('id_entreprise', $user->id_entreprise)
+            ->where('automobiles.id_entreprise', $user->id_entreprise)
             ->get();
 
         return response()->json($automobiles);
@@ -996,9 +996,9 @@ class ContratController extends Controller
     public function getGaranties()
     {
         $user =  JWTAuth::parseToken()->authenticate();
-        $garanties = Garantie::select('uuiGarantie', 'garanties.uuidAutomobile', 'id_automobile', 'automobiles.id_automobile', 'nom_garantie', 'automobiles.sync')
+        $garanties = Garantie::select('uuidGarantie', 'garanties.uuidAutomobile', 'garanties.id_automobile', 'nom_garantie', 'automobiles.sync')
             ->join("automobiles", 'garanties.id_automobile', '=', 'automobiles.id_automobile')
-            ->where('id_entreprise', $user->id_entreprise)
+            ->where('garanties.id_entreprise', $user->id_entreprise)
             ->get();
 
         return response()->json($garanties);
