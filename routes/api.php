@@ -240,6 +240,7 @@ Route::group([
     // Entreprise
     Route::resource('entreprises', EntrepriseController::class);
     Route::get('entreprises/edit/{id_entreprise}', [EntrepriseController::class, 'edit']);
+    Route::patch('validateentreprise', [EntrepriseController::class, 'validateEntreprise']);
 
 
 
