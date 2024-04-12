@@ -15,7 +15,7 @@ class CreateBrancheProspectsTable extends Migration
     {
         Schema::create('branche_prospects', function (Blueprint $table) {
             $table->bigIncrements('id_prosbranche');
-
+          
             $table->foreignId('id_prospect');
             $table->foreign('id_prospect')
                 ->references('id_prospect')
