@@ -10,8 +10,10 @@ use App\Models\Contrat;
 use App\Models\Prospect;
 use App\Models\Apporteur;
 use App\Models\Automobile;
+use App\Models\Categorie;
 use App\Models\Compagnie;
 use App\Models\Garantie;
+use App\Models\Marque;
 use App\Models\Reglement;
 use App\Models\Sinistre;
 use Illuminate\Http\Request;
@@ -422,10 +424,95 @@ class SyncController extends Controller
                     'montant' => $sinistreData['montant'],
                     'date_reglement' => $sinistreData['numero_sinistre'],
                     'user_id' => $sinistreData['user_id'],
-                    'supprimer_reglement' => $sinistreData['supprimer_reglement'],              
+                    'supprimer_reglement' => $sinistreData['supprimer_reglement'],
                     'id_entreprise' => $sinistreData['id_entreprise'],
                 ]
             );
         }
+    }
+
+    public function syncCategorie(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $categorieData) {
+            // Use updateOrCreate to create or update the Client model
+            Categorie::updateOrCreate(
+                ['uuidCategorie' => $categorieData['uuidCategorie']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'categorie' => $categorieData['categorie'],
+                ]
+            );
+        }
+    }
+
+    public function syncMarque(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $marqueData) {
+            // Use updateOrCreate to create or update the Client model
+            Marque::updateOrCreate(
+                ['uuidMarque' => $marqueData['uuidMarque']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'marque' => $marqueData['marque'],
+                ]
+            );
+        }
+    }
+
+    public function syncGenre(Request $request)
+    {
+         // Données à synchroniser
+         $data = $request->all();
+
+         foreach ($data as $genreData) {
+             // Use updateOrCreate to create or update the Client model
+             Marque::updateOrCreate(
+                 ['uuidGenre' => $genreData['uuidGenre']], // Unique identifier
+                 [
+                     'sync' => 1,
+                     'genre' => $genreData['genre'],
+                 ]
+             );
+         }
+    }
+
+    public function syncCouleur(Request $request)
+    {
+         // Données à synchroniser
+         $data = $request->all();
+
+         foreach ($data as $couleurData) {
+             // Use updateOrCreate to create or update the Client model
+             Marque::updateOrCreate(
+                 ['uuidCouleur' => $couleurData['uuidCouleur']], // Unique identifier
+                 [
+                     'sync' => 1,
+                     'couleur' => $couleurData['couleur'],
+                 ]
+             );
+         }
+    }
+
+    public function syncEnergie(Request $request)
+    {
+         // Données à synchroniser
+         $data = $request->all();
+
+         foreach ($data as $energieData) {
+             // Use updateOrCreate to create or update the Client model
+             Marque::updateOrCreate(
+                 ['uuidEnergie' => $energieData['uuidEnergie']], // Unique identifier
+                 [
+                     'sync' => 1,
+                     'energie' => $energieData['energie'],
+                 ]
+             );
+         }
     }
 }

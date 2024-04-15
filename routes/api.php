@@ -342,6 +342,11 @@ Route::group([
         Route::post('sync-automobiles', 'syncAutomobile');
         Route::post('sync-garanties', 'syncGarantie');
         Route::post('sync-sinistres', 'syncSinistre');
-        Route::post('sync-regelements', 'syncReglement');
+        Route::post('sync-reglements', 'syncReglement');
+        Route::post('sync-categories', 'syncCategorie');
+        Route::post('sync-marques', 'syncMarque');
+        Route::post('sync-genres', 'syncGenre');
+        Route::post('sync-couleurs', 'syncCouleur');
+        Route::post('sync-energies', 'syncEnergie');
     });
 });
