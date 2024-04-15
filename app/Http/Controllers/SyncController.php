@@ -198,7 +198,7 @@ class SyncController extends Controller
                     'id_apporteur' => $apporteur['id_apporteur'],
                     'id_entreprise' => $tauxapporteureData['id_entreprise'],
                 ]
-            );
+            ); 
         }
     }
 
