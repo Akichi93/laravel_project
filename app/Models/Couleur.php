@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Couleur extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'uuidCouleur',
+        'couleur',
+        'sync'
+    ];
 }

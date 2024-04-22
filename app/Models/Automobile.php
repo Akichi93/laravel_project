@@ -12,6 +12,9 @@ class Automobile extends Model
     protected $primaryKey = 'id_automobile';
 
     protected $fillable = [
+        'uuidAutomobile',
+        'uuidContrat',
+        'id_contrat',
         'numero_immatriculation',
         'identification_proprietaire',
         'date_circulation',

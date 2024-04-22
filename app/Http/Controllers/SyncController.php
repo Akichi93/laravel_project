@@ -3,19 +3,22 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use App\Models\Genre;
 use App\Models\Client;
+use App\Models\Marque;
 use App\Models\Avenant;
 use App\Models\Branche;
 use App\Models\Contrat;
+use App\Models\Garantie;
 use App\Models\Prospect;
+use App\Models\Sinistre;
 use App\Models\Apporteur;
-use App\Models\Automobile;
 use App\Models\Categorie;
 use App\Models\Compagnie;
-use App\Models\Garantie;
-use App\Models\Marque;
 use App\Models\Reglement;
-use App\Models\Sinistre;
+use App\Models\Automobile;
+use App\Models\Couleur;
+use App\Models\Energie;
 use Illuminate\Http\Request;
 use App\Models\TauxApporteur;
 use App\Models\TauxCompagnie;
@@ -307,7 +310,7 @@ class SyncController extends Controller
                     'sync' => 1,
                     //   'uuidAutomobile' => $AutomobileData['uuidAutomobile'],
                     'uuidContrat' => $AutomobileData['uuidContrat'],
-                    'numero_immatriculation' => $contrat['numero_immatriculation'],
+                    'numero_immatriculation' => $AutomobileData['numero_immatriculation'],
                     'date_circulation' => $AutomobileData['date_circulation'],
                     'date_circulation' => $AutomobileData['date_circulation'],
                     'categorie' => $AutomobileData['categorie'],
@@ -316,7 +319,7 @@ class SyncController extends Controller
                     'type' => $AutomobileData['type'],
                     'carosserie' => $AutomobileData['carosserie'],
                     'couleur' => $AutomobileData['couleur'],
-                    'option' => $AutomobileData['option'],
+                    // 'option' => $AutomobileData['option'],
                     'entree' => $AutomobileData['entree'],
                     'energie' => $AutomobileData['energie'],
                     'place' => $AutomobileData['place'],
@@ -326,16 +329,16 @@ class SyncController extends Controller
                     'valeur_venale' => $AutomobileData['valeur_venale'],
                     'categorie_socio_pro' => $AutomobileData['categorie_socio_pro'],
                     'permis' => $AutomobileData['permis'],
-                    'prime_nette' => $AutomobileData['prime_nette'],
-                    'frais_courtier' => $AutomobileData['frais_courtier'],
-                    'accesoires' => $AutomobileData['accesoires'],
-                    'cfga' => $AutomobileData['cfga'],
-                    'taxes_totales' => $AutomobileData['taxes_totales'],
-                    'prime_ttc' => $AutomobileData['prime_ttc'],
-                    'commission_courtier' => $AutomobileData['commission_courtier'],
-                    'gestion' => $AutomobileData['gestion'],
-                    'commission_apporteur' => $AutomobileData['commission_apporteur'],
-                    'type_garantie' => $AutomobileData['type_garantie'],
+                    // 'prime_nette' => $AutomobileData['prime_nette'],
+                    // 'frais_courtier' => $AutomobileData['frais_courtier'],
+                    // 'accesoires' => $AutomobileData['accesoires'],
+                    // 'cfga' => $AutomobileData['cfga'],
+                    // 'taxes_totales' => $AutomobileData['taxes_totales'],
+                    // 'prime_ttc' => $AutomobileData['prime_ttc'],
+                    // 'commission_courtier' => $AutomobileData['commission_courtier'],
+                    // 'gestion' => $AutomobileData['gestion'],
+                    // 'commission_apporteur' => $AutomobileData['commission_apporteur'],
+                    // 'type_garantie' => $AutomobileData['type_garantie'],
                     'zone' => $AutomobileData['zone'],
                     'id_contrat' => $contrat['id_contrat'],
                     'id_entreprise' => $AutomobileData['id_entreprise'],
@@ -472,7 +475,7 @@ class SyncController extends Controller
 
          foreach ($data as $genreData) {
              // Use updateOrCreate to create or update the Client model
-             Marque::updateOrCreate(
+             Genre::updateOrCreate(
                  ['uuidGenre' => $genreData['uuidGenre']], // Unique identifier
                  [
                      'sync' => 1,
@@ -489,7 +492,7 @@ class SyncController extends Controller
 
          foreach ($data as $couleurData) {
              // Use updateOrCreate to create or update the Client model
-             Marque::updateOrCreate(
+             Couleur::updateOrCreate(
                  ['uuidCouleur' => $couleurData['uuidCouleur']], // Unique identifier
                  [
                      'sync' => 1,
@@ -506,7 +509,7 @@ class SyncController extends Controller
 
          foreach ($data as $energieData) {
              // Use updateOrCreate to create or update the Client model
-             Marque::updateOrCreate(
+             Energie::updateOrCreate(
                  ['uuidEnergie' => $energieData['uuidEnergie']], // Unique identifier
                  [
                      'sync' => 1,

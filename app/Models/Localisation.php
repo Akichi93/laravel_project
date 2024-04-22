@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Localisation extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'uuidMarque',
+        'marque',
+        'sync'
+    ];
 }
