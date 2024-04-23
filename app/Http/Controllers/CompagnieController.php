@@ -150,7 +150,8 @@ class CompagnieController extends Controller
     public function getTauxCompagnies()
     {
         $user =  JWTAuth::parseToken()->authenticate();
-        $compagnies = TauxCompagnie::join("branches", 'taux_compagnies.id_branche', '=', 'branches.id_branche')
+        $compagnies = TauxCompagnie::select('uuidTauxCompagnie', 'compagnies.uuidCompagnie', 'taux_compagnies.sync', 'tauxcomp', 'branches.nom_branche', 'taux_compagnies.id_entreprise', 'branches.uuidBranche')
+            ->join("branches", 'taux_compagnies.id_branche', '=', 'branches.id_branche')
             ->join("compagnies", 'taux_compagnies.id_compagnie', '=', 'compagnies.id_compagnie')
             ->where('taux_compagnies.id_entreprise', $user->id_entreprise)
             ->get();

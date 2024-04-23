@@ -196,7 +196,8 @@ class ApporteurController extends Controller
     public function getTauxApporteurs()
     {
         $user =  JWTAuth::parseToken()->authenticate();
-        $apporteurs = TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
+        $apporteurs = TauxApporteur::select('uuidTauxApporteur', 'apporteurs.uuidApporteur', 'taux_apporteurs.sync', 'taux', 'branches.nom_branche', 'taux_apporteurs.id_entreprise', 'branches.uuidBranche')
+            ->join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
             ->join("apporteurs", 'taux_apporteurs.id_apporteur', '=', 'apporteurs.id_apporteur')
             ->where('taux_apporteurs.id_entreprise', $user->id_entreprise)
             ->get();

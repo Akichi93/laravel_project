@@ -19,7 +19,8 @@ class TauxCompagnie extends Model
         'sync',
         'uuidCompagnie',
         'uuidBranche',
-        'id_entreprise'
+        'id_entreprise',
+        'sync'
     ];
 
     protected $casts = [
