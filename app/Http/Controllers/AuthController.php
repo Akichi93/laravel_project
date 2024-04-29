@@ -86,6 +86,7 @@ class AuthController extends Controller
             'adresse' => auth()->user()->adresse,
             'id_entreprise' => auth()->user()->id_entreprise,
             'role' =>  User::join("roles", 'users.id_role', '=', 'roles.id_role')->where('users.id', auth()->user()->id)->value('nom_role'),
+            'mode' =>  User::join("entreprises", 'users.id_entreprise', '=', 'entreprises.id_entreprise')->where('users.id', auth()->user()->id)->value('mode'),
         ]);
     }
 
