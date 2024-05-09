@@ -7,6 +7,7 @@ use App\Models\FraisMedical;
 use App\Models\ReductionGroupe;
 use App\Models\TarificateurAccident;
 use App\Models\TarificateurFraisMedical;
+use App\Models\TarificationAccident;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -66,5 +67,13 @@ class AccidentIndividuelController extends Controller
         $frais = TarificateurFraisMedical::where('id_entreprise', $user->id_entreprise)->get();
 
         return response()->json($frais);
+    }
+
+    public function getTarificationAccident(){
+        $user =  JWTAuth::parseToken()->authenticate();
+
+        $tarifications = TarificationAccident::where('id_entreprise', $user->id_entreprise)->get();
+
+        return response()->json($tarifications);
     }
 }

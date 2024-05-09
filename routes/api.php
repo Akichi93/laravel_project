@@ -296,6 +296,7 @@ Route::group([
         Route::get('getfraismedicals', 'getFraisMedical');
         Route::get('gettarificateuraccidents', 'getTarificateurAccident');
         Route::get('gettarificateurfrais', 'getTarificateurFrais');
+        Route::get('gettarificationaccidents', 'getTarificationAccident');
         // Route::post('postSalaire', 'postSalaire');
     });
 
