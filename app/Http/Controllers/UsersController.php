@@ -21,7 +21,7 @@ class UsersController extends Controller
     {
         $user =  JWTAuth::parseToken()->authenticate();
         $users = User::join("roles", 'roles.id_role', '=', 'users.id_role')
-            // ->where('id_entreprise', $user->id_entreprise)
+            ->where('id_entreprise', $user->id_entreprise)
             ->get();
 
         return response()->json($users);

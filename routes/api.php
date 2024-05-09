@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccidentIndividuelController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RhController;
@@ -287,6 +288,15 @@ Route::group([
         Route::get('listeTypeDepense', 'listeTypeDepense');
         Route::post('postTypeDepense', 'postTypeDepense');
         Route::get('listeSecteurs', 'listeSecteurs');
+    });
+
+    Route::controller(AccidentIndividuelController::class)->group(function () {
+        Route::get('getreductiongroups', 'getReductionGroupe');
+        Route::get('getassurancetemporaires', 'getAssuranceTemporaire');
+        Route::get('getfraismedicals', 'getFraisMedical');
+        Route::get('gettarificateuraccidents', 'getTarificateurAccident');
+        Route::get('gettarificateurfrais', 'getTarificateurFrais');
+        // Route::post('postSalaire', 'postSalaire');
     });
 
 
