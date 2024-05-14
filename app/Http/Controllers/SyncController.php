@@ -13,12 +13,17 @@ use App\Models\Garantie;
 use App\Models\Prospect;
 use App\Models\Sinistre;
 use App\Models\Apporteur;
+use App\Models\AssuranceTemporaire;
 use App\Models\Categorie;
 use App\Models\Compagnie;
 use App\Models\Reglement;
 use App\Models\Automobile;
 use App\Models\Couleur;
 use App\Models\Energie;
+use App\Models\FraisMedical;
+use App\Models\ReductionGroupe;
+use App\Models\TarificateurAccident;
+use App\Models\TarificateurFraisMedical;
 use Illuminate\Http\Request;
 use App\Models\TauxApporteur;
 use App\Models\TauxCompagnie;
@@ -201,7 +206,7 @@ class SyncController extends Controller
                     'id_apporteur' => $apporteur['id_apporteur'],
                     'id_entreprise' => $tauxapporteureData['id_entreprise'],
                 ]
-            ); 
+            );
         }
     }
 
@@ -470,52 +475,206 @@ class SyncController extends Controller
 
     public function syncGenre(Request $request)
     {
-         // Données à synchroniser
-         $data = $request->all();
+        // Données à synchroniser
+        $data = $request->all();
 
-         foreach ($data as $genreData) {
-             // Use updateOrCreate to create or update the Client model
-             Genre::updateOrCreate(
-                 ['uuidGenre' => $genreData['uuidGenre']], // Unique identifier
-                 [
-                     'sync' => 1,
-                     'genre' => $genreData['genre'],
-                 ]
-             );
-         }
+        foreach ($data as $genreData) {
+            // Use updateOrCreate to create or update the Client model
+            Genre::updateOrCreate(
+                ['uuidGenre' => $genreData['uuidGenre']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'genre' => $genreData['genre'],
+                ]
+            );
+        }
     }
 
     public function syncCouleur(Request $request)
     {
-         // Données à synchroniser
-         $data = $request->all();
+        // Données à synchroniser
+        $data = $request->all();
 
-         foreach ($data as $couleurData) {
-             // Use updateOrCreate to create or update the Client model
-             Couleur::updateOrCreate(
-                 ['uuidCouleur' => $couleurData['uuidCouleur']], // Unique identifier
-                 [
-                     'sync' => 1,
-                     'couleur' => $couleurData['couleur'],
-                 ]
-             );
-         }
+        foreach ($data as $couleurData) {
+            // Use updateOrCreate to create or update the Client model
+            Couleur::updateOrCreate(
+                ['uuidCouleur' => $couleurData['uuidCouleur']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'couleur' => $couleurData['couleur'],
+                ]
+            );
+        }
     }
 
     public function syncEnergie(Request $request)
     {
-         // Données à synchroniser
-         $data = $request->all();
+        // Données à synchroniser
+        $data = $request->all();
 
-         foreach ($data as $energieData) {
-             // Use updateOrCreate to create or update the Client model
-             Energie::updateOrCreate(
-                 ['uuidEnergie' => $energieData['uuidEnergie']], // Unique identifier
-                 [
-                     'sync' => 1,
-                     'energie' => $energieData['energie'],
-                 ]
-             );
-         }
+        foreach ($data as $energieData) {
+            // Use updateOrCreate to create or update the Client model
+            Energie::updateOrCreate(
+                ['uuidEnergie' => $energieData['uuidEnergie']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'energie' => $energieData['energie'],
+                ]
+            );
+        }
+    }
+
+    public function syncReductionGroup(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $ReductionGroupData) {
+            $compagnie = Compagnie::where('uuidCompagnie', $ReductionGroupData['uuidCompagnie'])->first();
+            // Use updateOrCreate to create or update the Client model
+            ReductionGroupe::updateOrCreate(
+                ['uuidReductionGroupe' => $ReductionGroupData['uuidReductionGroupe']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'uuidCompagnie' => $ReductionGroupData['uuidCompagnie'],
+                    'id_compagnie' => $compagnie['id_compagnie'],
+                    'nbrePersonneMin' => $ReductionGroupData['nbrePersonneMin'],
+                    'nbrePersonneMax' => $ReductionGroupData['nbrePersonneMax'],
+                    'pourcentage' => $ReductionGroupData['pourcentage'],
+                    'id_entreprise' => $ReductionGroupData['id_entreprise'],
+                    'user_id' => $ReductionGroupData['id'],
+                ]
+            );
+        }
+    }
+
+    public function syncAssuranceTemporaires(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $AssuranceTemporaireData) {
+            $compagnie = Compagnie::where('uuidCompagnie', $AssuranceTemporaireData['uuidCompagnie'])->first();
+            // Use updateOrCreate to create or update the Client model
+            AssuranceTemporaire::updateOrCreate(
+                ['uuidAssuranceTemporaire' => $AssuranceTemporaireData['uuidAssuranceTemporaire']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'uuidCompagnie' => $AssuranceTemporaireData['uuidCompagnie'],
+                    'id_compagnie' => $compagnie['id_compagnie'],
+                    'nbreMoisMin' => $AssuranceTemporaireData['nbreMoisMin'],
+                    'nbreMoisMax' => $AssuranceTemporaireData['nbreMoisMax'],
+                    'pourcentage' => $AssuranceTemporaireData['pourcentage'],
+                    'id_entreprise' => $AssuranceTemporaireData['id_entreprise'],
+                    'user_id' => $AssuranceTemporaireData['id'],
+                ]
+            );
+        }
+    }
+
+    public function syncFraisMedicals(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $FraisMedicalData) {
+            $compagnie = Compagnie::where('uuidCompagnie', $FraisMedicalData['uuidCompagnie'])->first();
+            // Use updateOrCreate to create or update the Client model
+            FraisMedical::updateOrCreate(
+                ['uuidFraisMedical' => $FraisMedicalData['uuidFraisMedical']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'uuidCompagnie' => $FraisMedicalData['uuidCompagnie'],
+                    'id_compagnie' => $compagnie['id_compagnie'],
+                    'montant' => $FraisMedicalData['montant'],
+                    'id_entreprise' => $FraisMedicalData['id_entreprise'],
+                    'user_id' => $FraisMedicalData['id'],
+                ]
+            );
+        }
+    }
+
+    public function syncTarificateurAccidents(Request $request)
+    {
+        // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $TarificateurAccidentData) {
+        
+            // Use updateOrCreate to create or update the Client model
+            TarificateurAccident::updateOrCreate(
+                ['uuidTarificateurAccident' => $TarificateurAccidentData['uuidTarificateurAccident']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'classe' => $TarificateurAccidentData['classe'],
+                    'tauxDeces' => $TarificateurAccidentData['tauxDeces'],
+                    'activite' => $TarificateurAccidentData['activite'],
+                    'tauxIPT' => $TarificateurAccidentData['tauxIPT'],
+                    'id_entreprise' => $TarificateurAccidentData['id_entreprise'],
+                    'user_id' => $TarificateurAccidentData['id'],
+                ]
+            );
+        }
+     
+    }
+
+    public function syncTarificateurFrais(Request $request)
+    {
+     // Données à synchroniser
+        $data = $request->all();
+
+        foreach ($data as $TarificateurFraisData) {
+        
+            // Use updateOrCreate to create or update the Client model
+            TarificateurFraisMedical::updateOrCreate(
+                ['uuidTarificateurAccident' => $TarificateurFraisData['uuidTarificateurAccident']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'taux' => $TarificateurFraisData['taux'],
+                    'uuidFraisMedical' => $TarificateurFraisData['uuidFraisMedical'],
+                    'uuidCompagnie' => $TarificateurFraisData['uuidCompagnie'],
+                    'user_id' => $TarificateurFraisData['id'],
+                ]
+            );
+        }
+    }
+
+    public function syncTarificationAccidents(Request $request)
+    {
+        $data = $request->all();
+
+        foreach ($data as $TarificateurAccidentData) {
+            $compagnie = Compagnie::where('uuidCompagnie', $TarificateurAccidentData['uuidCompagnie'])->first();
+            // Use updateOrCreate to create or update the Client model
+            FraisMedical::updateOrCreate(
+                ['uuidTarificationAccident' => $TarificateurAccidentData['uuidTarificationAccident']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'uuidCompagnie' => $TarificateurAccidentData['uuidCompagnie'],
+                    'id_compagnie' => $compagnie['id_compagnie'],
+                    'nom_complet' => $TarificateurAccidentData['nom_complet'],
+                    'activite' => $TarificateurAccidentData['activite'],
+                    'effectif' => $TarificateurAccidentData['effectif'],
+                    'duree' => $TarificateurAccidentData['duree'],
+                    'deces' => $TarificateurAccidentData['deces'],
+                    'ipt' => $TarificateurAccidentData['ipt'],
+                    'frais_medicaux' => $TarificateurAccidentData['frais_medicaux'],
+                    'prime_nette_brute' => $TarificateurAccidentData['prime_nette_brute'],
+                    'taux_reduction_effectif' => $TarificateurAccidentData['taux_reduction_effectif'],
+                    'prime_nette_reduite' => $TarificateurAccidentData['prime_nette_reduite :'],
+                    'prime_nette_annuelle' => $TarificateurAccidentData['montant'],
+                    'accessoire_annuel' => $TarificateurAccidentData['montant'],
+                    'taxe_annuelle' => $TarificateurAccidentData['montant'],
+                    'prime_ttc_annuelle' => $TarificateurAccidentData['montant'],
+                    'prime_nette_courte' => $TarificateurAccidentData['montant'],
+                    'taux_reduction_duree' => $TarificateurAccidentData['montant'],
+                    'accesoire_courte' => $TarificateurAccidentData['montant'],
+                    'taxe_courte' => $TarificateurAccidentData['montant'],
+                    'prime_ttc_courte' => $TarificateurAccidentData['montant'],
+                    'id_entreprise' => $TarificateurAccidentData['id_entreprise'],
+                    'user_id' => $TarificateurAccidentData['id'],
+                ]
+            );
+        }
     }
 }
