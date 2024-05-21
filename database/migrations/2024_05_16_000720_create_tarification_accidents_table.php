@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuidTarificationAccident');
             $table->uuid('uuidCompagnie');
+            $table->uuid('uuidProspect');
             $table->string('nom_complet');
             $table->string('activite');
             $table->integer('effectif');
@@ -32,10 +33,15 @@ return new class extends Migration
             $table->decimal('prime_ttc_annuelle', 10, 2);
             $table->decimal('prime_nette_courte', 10, 2);
             $table->integer('taux_reduction_duree');
-            // $table->decimal('prime_nette_courte', 10, 2);
             $table->decimal('accesoire_courte', 10, 2);
             $table->decimal('taxe_courte', 10, 2);
             $table->decimal('prime_ttc_courte', 10, 2);
+
+            $table->foreignId('id_prospect');
+            $table->foreign('id_prospect')
+                ->references('id_prospect')
+                ->on('prospects')
+                ->onDelete('cascade');
 
             $table->foreignId('id_compagnie');
             $table->foreign('id_compagnie')

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Activite;
 use App\Models\AssuranceTemporaire;
 use App\Models\FraisMedical;
 use App\Models\ReductionGroupe;
@@ -42,14 +43,14 @@ class AccidentIndividuelController extends Controller
         return response()->json($assurances);
     }
 
-    public function getFraisMedical()
-    {
-        $user =  JWTAuth::parseToken()->authenticate();
+    // public function getFraisMedical()
+    // {
+    //     $user =  JWTAuth::parseToken()->authenticate();
 
-        $frais = FraisMedical::where('id_entreprise', $user->id_entreprise)->get();
+    //     $frais = FraisMedical::where('id_entreprise', $user->id_entreprise)->get();
 
-        return response()->json($frais);
-    }
+    //     return response()->json($frais);
+    // }
 
     public function getTarificateurAccident()
     {
@@ -60,20 +61,30 @@ class AccidentIndividuelController extends Controller
         return response()->json($tarificateurs);
     }
 
-    public function getTarificateurFrais()
+    // public function getTarificateurFrais()
+    // {
+    //     $user =  JWTAuth::parseToken()->authenticate();
+
+    //     $frais = TarificateurFraisMedical::where('id_entreprise', $user->id_entreprise)->get();
+
+    //     return response()->json($frais);
+    // }
+
+    public function getTarificationAccident()
     {
-        $user =  JWTAuth::parseToken()->authenticate();
-
-        $frais = TarificateurFraisMedical::where('id_entreprise', $user->id_entreprise)->get();
-
-        return response()->json($frais);
-    }
-
-    public function getTarificationAccident(){
         $user =  JWTAuth::parseToken()->authenticate();
 
         $tarifications = TarificationAccident::where('id_entreprise', $user->id_entreprise)->get();
 
         return response()->json($tarifications);
+    }
+
+    public function getActivite()
+    {
+        $user =  JWTAuth::parseToken()->authenticate();
+
+        $activites = Activite::where('id_entreprise', $user->id_entreprise)->get();
+
+        return response()->json($activites);
     }
 }

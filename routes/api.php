@@ -293,10 +293,11 @@ Route::group([
     Route::controller(AccidentIndividuelController::class)->group(function () {
         Route::get('getreductiongroups', 'getReductionGroupe');
         Route::get('getassurancetemporaires', 'getAssuranceTemporaire');
-        Route::get('getfraismedicals', 'getFraisMedical');
+        // Route::get('getfraismedicals', 'getFraisMedical');
         Route::get('gettarificateuraccidents', 'getTarificateurAccident');
-        Route::get('gettarificateurfrais', 'getTarificateurFrais');
+        // Route::get('gettarificateurfrais', 'getTarificateurFrais');
         Route::get('gettarificationaccidents', 'getTarificationAccident');
+        Route::get('getactivites', 'getActivite');
         // Route::post('postSalaire', 'postSalaire');
     });
 

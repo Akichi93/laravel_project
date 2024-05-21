@@ -11,21 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('frais_medicals', function (Blueprint $table) {
-            $table->bigIncrements('id_fraismedical');
-            $table->uuid('uuidFraisMedical');
-            $table->uuid('uuidCompagnie');
-
-            $table->foreignId('id_compagnie');
-            $table->foreign('id_compagnie')
-                ->references('id_compagnie')
-                ->on('compagnies')
-                ->onDelete('cascade');
-            $table->decimal('montant', 10, 2);
-            $table->boolean('sync')->default(false);
-
+        Schema::create('activites', function (Blueprint $table) {
+            $table->bigIncrements('id_activite');
+            $table->integer('classe');
+            $table->uuid('uuidActivite');
+            $table->string('activite');
             $table->foreignId('id_entreprise');
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('user_id')->nullable();
 
             $table->foreign('id_entreprise')
                 ->references('id_entreprise')
@@ -37,6 +29,7 @@ return new class extends Migration
                 ->references('id')
                 ->on('users')
                 ->onDelete('cascade');
+            $table->boolean('sync')->default(false);
             $table->timestamps();
         });
     }
@@ -46,6 +39,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('frais_medicals');
+        Schema::dropIfExists('activites');
     }
 };

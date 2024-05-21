@@ -24,6 +24,7 @@ use App\Models\FraisMedical;
 use App\Models\ReductionGroupe;
 use App\Models\TarificateurAccident;
 use App\Models\TarificateurFraisMedical;
+use App\Models\TarificationAccident;
 use Illuminate\Http\Request;
 use App\Models\TauxApporteur;
 use App\Models\TauxCompagnie;
@@ -572,27 +573,27 @@ class SyncController extends Controller
         }
     }
 
-    public function syncFraisMedicals(Request $request)
-    {
-        // Données à synchroniser
-        $data = $request->all();
+    // public function syncFraisMedicals(Request $request)
+    // {
+    //     // Données à synchroniser
+    //     $data = $request->all();
 
-        foreach ($data as $FraisMedicalData) {
-            $compagnie = Compagnie::where('uuidCompagnie', $FraisMedicalData['uuidCompagnie'])->first();
-            // Use updateOrCreate to create or update the Client model
-            FraisMedical::updateOrCreate(
-                ['uuidFraisMedical' => $FraisMedicalData['uuidFraisMedical']], // Unique identifier
-                [
-                    'sync' => 1,
-                    'uuidCompagnie' => $FraisMedicalData['uuidCompagnie'],
-                    'id_compagnie' => $compagnie['id_compagnie'],
-                    'montant' => $FraisMedicalData['montant'],
-                    'id_entreprise' => $FraisMedicalData['id_entreprise'],
-                    'user_id' => $FraisMedicalData['id'],
-                ]
-            );
-        }
-    }
+    //     foreach ($data as $FraisMedicalData) {
+    //         $compagnie = Compagnie::where('uuidCompagnie', $FraisMedicalData['uuidCompagnie'])->first();
+    //         // Use updateOrCreate to create or update the Client model
+    //         FraisMedical::updateOrCreate(
+    //             ['uuidFraisMedical' => $FraisMedicalData['uuidFraisMedical']], // Unique identifier
+    //             [
+    //                 'sync' => 1,
+    //                 'uuidCompagnie' => $FraisMedicalData['uuidCompagnie'],
+    //                 'id_compagnie' => $compagnie['id_compagnie'],
+    //                 'montant' => $FraisMedicalData['montant'],
+    //                 'id_entreprise' => $FraisMedicalData['id_entreprise'],
+    //                 'user_id' => $FraisMedicalData['id'],
+    //             ]
+    //         );
+    //     }
+    // }
 
     public function syncTarificateurAccidents(Request $request)
     {
@@ -618,26 +619,26 @@ class SyncController extends Controller
      
     }
 
-    public function syncTarificateurFrais(Request $request)
-    {
-     // Données à synchroniser
-        $data = $request->all();
+    // public function syncTarificateurFrais(Request $request)
+    // {
+    //  // Données à synchroniser
+    //     $data = $request->all();
 
-        foreach ($data as $TarificateurFraisData) {
+    //     foreach ($data as $TarificateurFraisData) {
         
-            // Use updateOrCreate to create or update the Client model
-            TarificateurFraisMedical::updateOrCreate(
-                ['uuidTarificateurAccident' => $TarificateurFraisData['uuidTarificateurAccident']], // Unique identifier
-                [
-                    'sync' => 1,
-                    'taux' => $TarificateurFraisData['taux'],
-                    'uuidFraisMedical' => $TarificateurFraisData['uuidFraisMedical'],
-                    'uuidCompagnie' => $TarificateurFraisData['uuidCompagnie'],
-                    'user_id' => $TarificateurFraisData['id'],
-                ]
-            );
-        }
-    }
+    //         // Use updateOrCreate to create or update the Client model
+    //         TarificateurFraisMedical::updateOrCreate(
+    //             ['uuidTarificateurAccident' => $TarificateurFraisData['uuidTarificateurAccident']], // Unique identifier
+    //             [
+    //                 'sync' => 1,
+    //                 'taux' => $TarificateurFraisData['taux'],
+    //                 'uuidFraisMedical' => $TarificateurFraisData['uuidFraisMedical'],
+    //                 'uuidCompagnie' => $TarificateurFraisData['uuidCompagnie'],
+    //                 'user_id' => $TarificateurFraisData['id'],
+    //             ]
+    //         );
+    //     }
+    // }
 
     public function syncTarificationAccidents(Request $request)
     {
@@ -646,7 +647,7 @@ class SyncController extends Controller
         foreach ($data as $TarificateurAccidentData) {
             $compagnie = Compagnie::where('uuidCompagnie', $TarificateurAccidentData['uuidCompagnie'])->first();
             // Use updateOrCreate to create or update the Client model
-            FraisMedical::updateOrCreate(
+            TarificationAccident::updateOrCreate(
                 ['uuidTarificationAccident' => $TarificateurAccidentData['uuidTarificationAccident']], // Unique identifier
                 [
                     'sync' => 1,
