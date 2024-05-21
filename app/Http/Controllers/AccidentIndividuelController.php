@@ -14,9 +14,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AccidentIndividuelController extends Controller
 {
-    // public function reductionList()
-    // {
-    // }
+    
 
     public function getReductionGroupe()
     {
@@ -43,14 +41,7 @@ class AccidentIndividuelController extends Controller
         return response()->json($assurances);
     }
 
-    // public function getFraisMedical()
-    // {
-    //     $user =  JWTAuth::parseToken()->authenticate();
-
-    //     $frais = FraisMedical::where('id_entreprise', $user->id_entreprise)->get();
-
-    //     return response()->json($frais);
-    // }
+  
 
     public function getTarificateurAccident()
     {
@@ -61,14 +52,6 @@ class AccidentIndividuelController extends Controller
         return response()->json($tarificateurs);
     }
 
-    // public function getTarificateurFrais()
-    // {
-    //     $user =  JWTAuth::parseToken()->authenticate();
-
-    //     $frais = TarificateurFraisMedical::where('id_entreprise', $user->id_entreprise)->get();
-
-    //     return response()->json($frais);
-    // }
 
     public function getTarificationAccident()
     {

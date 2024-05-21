@@ -532,9 +532,9 @@ class SyncController extends Controller
 
         foreach ($data as $ReductionGroupData) {
             $compagnie = Compagnie::where('uuidCompagnie', $ReductionGroupData['uuidCompagnie'])->first();
-            // Use updateOrCreate to create or update the Client model
+            
             ReductionGroupe::updateOrCreate(
-                ['uuidReductionGroupe' => $ReductionGroupData['uuidReductionGroupe']], // Unique identifier
+                ['uuidReductionGroupe' => $ReductionGroupData['uuidReductionGroupe']], 
                 [
                     'sync' => 1,
                     'uuidCompagnie' => $ReductionGroupData['uuidCompagnie'],
@@ -573,27 +573,7 @@ class SyncController extends Controller
         }
     }
 
-    // public function syncFraisMedicals(Request $request)
-    // {
-    //     // Données à synchroniser
-    //     $data = $request->all();
-
-    //     foreach ($data as $FraisMedicalData) {
-    //         $compagnie = Compagnie::where('uuidCompagnie', $FraisMedicalData['uuidCompagnie'])->first();
-    //         // Use updateOrCreate to create or update the Client model
-    //         FraisMedical::updateOrCreate(
-    //             ['uuidFraisMedical' => $FraisMedicalData['uuidFraisMedical']], // Unique identifier
-    //             [
-    //                 'sync' => 1,
-    //                 'uuidCompagnie' => $FraisMedicalData['uuidCompagnie'],
-    //                 'id_compagnie' => $compagnie['id_compagnie'],
-    //                 'montant' => $FraisMedicalData['montant'],
-    //                 'id_entreprise' => $FraisMedicalData['id_entreprise'],
-    //                 'user_id' => $FraisMedicalData['id'],
-    //             ]
-    //         );
-    //     }
-    // }
+   
 
     public function syncTarificateurAccidents(Request $request)
     {
@@ -619,26 +599,27 @@ class SyncController extends Controller
      
     }
 
-    // public function syncTarificateurFrais(Request $request)
-    // {
-    //  // Données à synchroniser
-    //     $data = $request->all();
+    public function syncActivite(Request $request){
+        // Données à synchroniser
+        $data = $request->all(); 
 
-    //     foreach ($data as $TarificateurFraisData) {
+        foreach ($data as $ActiviteData) {
         
-    //         // Use updateOrCreate to create or update the Client model
-    //         TarificateurFraisMedical::updateOrCreate(
-    //             ['uuidTarificateurAccident' => $TarificateurFraisData['uuidTarificateurAccident']], // Unique identifier
-    //             [
-    //                 'sync' => 1,
-    //                 'taux' => $TarificateurFraisData['taux'],
-    //                 'uuidFraisMedical' => $TarificateurFraisData['uuidFraisMedical'],
-    //                 'uuidCompagnie' => $TarificateurFraisData['uuidCompagnie'],
-    //                 'user_id' => $TarificateurFraisData['id'],
-    //             ]
-    //         );
-    //     }
-    // }
+            // Use updateOrCreate to create or update the Client model
+            TarificateurAccident::updateOrCreate(
+                ['uuidTarificateurAccident' => $ActiviteData['uuidTarificateurAccident']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'classe' => $ActiviteData['classe'],
+                    'activite' => $ActiviteData['activite'],
+                    'id_entreprise' => $ActiviteData['id_entreprise'],
+                    'user_id' => $ActiviteData['id'],
+                ]
+            );
+        }
+    }
+
+   
 
     public function syncTarificationAccidents(Request $request)
     {
@@ -646,7 +627,7 @@ class SyncController extends Controller
 
         foreach ($data as $TarificateurAccidentData) {
             $compagnie = Compagnie::where('uuidCompagnie', $TarificateurAccidentData['uuidCompagnie'])->first();
-            // Use updateOrCreate to create or update the Client model
+          
             TarificationAccident::updateOrCreate(
                 ['uuidTarificationAccident' => $TarificateurAccidentData['uuidTarificationAccident']], // Unique identifier
                 [
