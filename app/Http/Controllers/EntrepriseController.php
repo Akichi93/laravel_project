@@ -3,14 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Ramsey\Uuid\Uuid;
 use App\Models\Branche;
+use App\Models\Activite;
 use App\Models\Compagnie;
 use App\Models\Entreprise;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 use App\Models\TauxCompagnie;
 use Illuminate\Support\Facades\Hash;
-use Ramsey\Uuid\Uuid;
 
 class EntrepriseController extends Controller
 {
@@ -214,77 +215,6 @@ class EntrepriseController extends Controller
             $branche->save();
         }
 
-        // Créer les compagnies
-        // $path = 'Classeur1.csv';
-        // $handle = fopen($path, "r"); // open in readonly mode
-        // fgetcsv($handle);
-
-        // $day = date('d');
-        // $month = date('m');
-        // $year = date('Y');
-        // $a = substr($request->nom, 0, 3);
-        // $ref = $a . '-'  . intval($month) . intval($day) . $year;
-
-
-
-        // // Parse data from CSV file line by line
-        // while (($getData = fgetcsv($handle, 10000, ",")) !== FALSE) {
-
-        //     $id = (int)$id_entreprise;
-        //     // dd($id);
-
-        //     // if (is_string($getData[0])){
-        //     //     dd($id);
-        //     // }
-        //     // is_float() - Détermine si une variable est de type nombre décimal
-        //     // is_int() - Détermine si une variable est de type nombre entier
-        //     // is_bool() - Détermine si une variable est un booléen
-        //     // is_object() - Détermine si une variable est de type objet
-        //     // is_array() - Détermine si une variable est un tableau
-        //     // is_numeric() - Détermine si
-
-        //     $pcreate_data[] =
-        //         array(
-        //             'nom_compagnie' => $getData[0],
-        //             'email_compagnie' => $getData[1],
-        //             'adresse_compagnie' => $getData[2],
-        //             'contact_compagnie' => $getData[3],
-        //             'postal_compagnie' => $getData[4],
-        //             'code_compagnie' => $ref,
-        //             'id_entreprise' =>  $request->entreprise,
-
-        //         );
-        // }
-
-        // foreach ($pcreate_data as $data) {
-        //     Compagnie::create($data);
-        // }
-
-        // fclose($handle);
-
-
-
-        // // Recuperer les permissions du rôle
-        // $id = Compagnie::select('id_compagnie')
-        //     ->where('id_entreprise', $id_entreprise)
-        //     ->get()
-        //     ->toArray();
-
-        // // dd($id);
-        // foreach ($id as $get) {
-        //     $azerty[] = $get->id_compagnie;
-        // }
-
-        // // Ajout des permissions
-        // for ($i = 0; $i < count($azerty); $i++) {
-        //     $assoc = new TauxCompagnie();
-        //     $assoc->id_branche = $id;
-        //     $assoc->id_compagnie = $azerty[$i];
-        //     $assoc->tauxcomp = 0;
-        //     $assoc->save();
-        // }
-
-
 
         // // Envoie de mail
         // $to_email = $request->email;
@@ -306,5 +236,77 @@ class EntrepriseController extends Controller
         //         $message->from('flairapplication@gmail.com', 'FLAIR');
         //     });
         // }
+    }
+
+    public function tarificationEntreprise(Request $request)
+    {
+        $id_entreprise = $request->entreprise;
+
+        $tarifications = [
+            ['classe' => '1', 'activite' => 'Personnes sans profession'],
+            ['classe' => '1', 'activite' => 'Emploi administratif de bureau'],
+            ['classe' => '1', 'activite' => 'Professions libérales (Notaires ; Avocats ; Huissier de justice)'],
+            ['classe' => '1', 'activite' => 'Enseignants de l\'enseignement non technique'],
+            ['classe' => '2', 'activite' => 'Répresentant de commerce'],
+            ['classe' => '2', 'activite' => 'Couturiers'],
+            ['classe' => '2', 'activite' => 'Commerçants (sans travail manuel)'],
+            ['classe' => '2', 'activite' => 'Dépaneurs'],
+            ['classe' => '2', 'activite' => 'Marchands ambulants'],
+            ['classe' => '2', 'activite' => 'Agents ou personnel non sédentaire d\'assurance, de banque etc'],
+            ['classe' => '2', 'activite' => 'Agents de recouvrement'],
+            ['classe' => '2', 'activite' => 'Coiffeurs'],
+            ['classe' => '2', 'activite' => 'Acteurs (cinéma, Théatre …)'],
+            ['classe' => '2', 'activite' => 'Professions médicales et para-médicales'],
+            ['classe' => '3', 'activite' => 'Artisans (emploi de matériels lourds ou encombrants)'],
+            ['classe' => '3', 'activite' => 'Mécaniciens'],
+            ['classe' => '3', 'activite' => 'Chimiste'],
+            ['classe' => '3', 'activite' => 'Boulanger'],
+            ['classe' => '3', 'activite' => 'Patissier'],
+            ['classe' => '3', 'activite' => 'Imprimeur'],
+            ['classe' => '3', 'activite' => 'Quicailliers'],
+            ['classe' => '3', 'activite' => 'Sculpteurs'],
+            ['classe' => '3', 'activite' => 'Enseignants de l\'enseignement technique'],
+            ['classe' => '3', 'activite' => 'Directeurs avec circulation dans les ateliers'],
+            ['classe' => '4', 'activite' => 'Bâtiments et travaux publics'],
+            ['classe' => '4', 'activite' => 'Constructions navales'],
+            ['classe' => '4', 'activite' => 'Industrie (sauf travail du bois)'],
+            ['classe' => '4', 'activite' => 'Agriculteurs, épouses des exploitants agricoles et leurs salariés'],
+            ['classe' => '4', 'activite' => 'Déménageurs'],
+            ['classe' => '4', 'activite' => 'Professions annexes à l\'agriculture (éleveurs, Vétérinaires …)'],
+            ['classe' => '4', 'activite' => 'Conducteurs d\'engins de chantier'],
+            ['classe' => '4', 'activite' => 'Conducteurs d\'engins de levage'],
+            ['classe' => '4', 'activite' => 'Conducteurs de Véhicules de transport publics'],
+            ['classe' => '4', 'activite' => 'Manutentionnaires'],
+            ['classe' => '4', 'activite' => 'Livreurs'],
+            ['classe' => '5', 'activite' => 'Travaux en hauteur y compris échafaudages'],
+            ['classe' => '5', 'activite' => 'Installation et entretien d\'ascenseurs'],
+            ['classe' => '5', 'activite' => 'Peintures en bâtiment'],
+            ['classe' => '5', 'activite' => 'Personnes travaillant dans les abattoirs'],
+            ['classe' => '5', 'activite' => 'Service de maintien de l\'ordre (police gendarmerie, garde pénitentiaire …)'],
+            ['classe' => '5', 'activite' => 'Travail manuel en docks et entrepôts (dockers)'],
+            ['classe' => '5', 'activite' => 'Ouvriers de carrières'],
+            ['classe' => '5', 'activite' => 'Mise en œuvre de moyens de secours contre l\'incendie et autres catastrophes'],
+            ['classe' => '6', 'activite' => 'Travail du bois (menuiserie; scierie …)'],
+            ['classe' => '7', 'activite' => 'Électriciens sur haute tension'],
+            ['classe' => '7', 'activite' => 'Pêche ou autres travaux en mer'],
+            ['classe' => '7', 'activite' => 'Travaux souterrains (extractions; fouilles …)'],
+            ['classe' => '8', 'activite' => 'Abattage d\'arbres'],
+            ['classe' => '8', 'activite' => 'Travail sur toits (couvertures, poseurs d\'antennes …)'],
+            ['classe' => '8', 'activite' => 'Démolitions d\'immeubles'],
+            ['classe' => '8', 'activite' => 'Constructions portuaires, d\'ouvrages d\'art, de barrages …)'],
+            ['classe' => '8', 'activite' => 'Manipulation d\'explosifs'],
+            ['classe' => '8', 'activite' => 'Mines'],
+            ['classe' => '8', 'activite' => 'Ouvriers de sociétés d\'élagage'],
+        ];
+
+        for ($i = 0; $i < count($tarifications); $i++) {
+            $tarification = new Activite();
+            $tarification->uuidActivite = Uuid::uuid4()->toString();
+            $tarification->activite = $tarifications[$i]['activite'];
+            $tarification->classe = $tarifications[$i]['classe'];
+            $tarification->sync = 1;
+            $tarification->id_entreprise = $id_entreprise;
+            $tarification->save();
+        }
     }
 }
