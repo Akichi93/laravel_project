@@ -2,9 +2,12 @@
 
 namespace App\Repositories;
 
+use Ramsey\Uuid\Uuid;
 use App\Models\Branche;
 use App\Models\Apporteur;
 use App\Models\TauxApporteur;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use JasonGuru\LaravelMakeRepository\Repository\BaseRepository;
 
@@ -32,65 +35,100 @@ class ApporteurRepository extends BaseRepository
 
     public function postApporteur(array $data)
     {
-        // try {
         $apporteur = $data['nom_apporteur'];
-        if (Apporteur::where('nom_apporteur', '=', $apporteur)->count() > 0) {
+
+        // Check if Apporteur already exists
+        if (Apporteur::where('nom_apporteur', $apporteur)->exists()) {
             return response()->json(['message' => 'Apporteur existant'], 422);
-        } else {
-            $all = $data;
+        }
+
+        DB::beginTransaction();
+        try {
+            Log::info($data);
+
             $apporteurs = new Apporteur();
+            $apporteurs->uuidApporteur = $data['uuidApporteur'];
             $apporteurs->nom_apporteur = $data['nom_apporteur'];
             $apporteurs->contact_apporteur = $data['contact_apporteur'];
             $apporteurs->email_apporteur = $data['email_apporteur'];
             $apporteurs->adresse_apporteur = $data['adresse_apporteur'];
             $apporteurs->code_postal = $data['code_postal'];
-            $apporteurs->code_apporteur =   $data['code_apporteur'];
+            $apporteurs->code_apporteur = $data['code_apporteur'];
             $apporteurs->id_entreprise = $data['id_entreprise'];
-            $apporteurs->uuidApporteur = $data['uuidApporteur'];
             $apporteurs->user_id = $data['id'];
             $apporteurs->apporteur_url = bcrypt($data['code_apporteur']);
             $apporteurs->sync = 1;
             $apporteurs->save();
 
-            $id = $apporteurs->id_apporteur;
+            $apporteurId = $apporteurs->id_apporteur;
 
-            $leads = $all['accidents'];  // valeur
-            $id = $all['ids']; // id
+            if (isset($data['unique'])) {
+                $branches = Branche::all();
 
-            // recuperer id_branche à travers uuidBranche
+                foreach ($branches as $branche) {
+                    $uuidBranche = $branche->uuidBranche;
 
-            $branches = Branche::whereIn('uuidBranche', $id)->get();
-            $firsts = [];
+                    $taux = new TauxApporteur();
+                    $taux->uuidTauxApporteur = \Ramsey\Uuid\Uuid::uuid4()->toString();
+                    $taux->uuidApporteur = $data['uuidApporteur'];
+                    $taux->uuidBranche = $uuidBranche;
+                    $taux->taux = $data['unique'];
+                    $taux->id_branche = $branche->id_branche;
+                    $taux->id_apporteur = $apporteurId;
+                    $taux->id_entreprise = $data['id_entreprise'];
+                    $taux->save();
+                }
+            } else {
+                $leads = $data['accidents'];  // Array of values
+                $ids = $data['ids']; // Array of UUIDs
 
-            foreach ($branches as $branche) {
-                $idBranche = $branche->id_branche;
-                $firsts[] = $idBranche;
+                $branches = Branche::whereIn('uuidBranche', $ids)->get();
+                $firsts = $branches->pluck('id_branche')->toArray();
+
+                // Ensure that leads and firsts have the same number of elements
+                if (count($firsts) !== count($leads)) {
+                    throw new \Exception('The count of branches and leads does not match.');
+                }
+
+                $array = array_combine($firsts, $leads);
+
+                foreach ($array as $key => $value) {
+                    $uuidBranche = Branche::where('id_branche', $key)->value('uuidBranche');
+
+                    if ($uuidBranche === null) {
+                        Log::error("uuidBranche is null for id_branche: $key");
+                        continue; // Skip this iteration if uuidBranche is null
+                    }
+
+                    Log::info("uuidBranche: $uuidBranche");
+
+                    $taux = new TauxApporteur();
+                    $taux->uuidTauxApporteur = \Ramsey\Uuid\Uuid::uuid4()->toString();
+                    $taux->uuidApporteur = $data['uuidApporteur'];
+                    $taux->uuidBranche = $uuidBranche;
+                    $taux->taux = $value;
+                    $taux->id_branche = $key;
+                    $taux->id_apporteur = $apporteurId;
+                    $taux->id_entreprise = $data['id_entreprise'];
+                    $taux->save();
+                }
             }
 
-            // Utilisation de la fonction dd() pour afficher le tableau
-            $array = array_combine($firsts, $leads);
-
-            foreach ($array as $key => $value) {
-                $taux = new TauxApporteur();
-                $taux->taux = $value;
-                $taux->id_branche = $key;
-                $taux->id_apporteur = $apporteurs['id_apporteur'];
-                $taux->save();
-            }
-
-            return $apporteurs;
-
-            //     return ['message' => 'Insertion avec succes'];
-            // } catch (\Exception $exception){
-            //     die("Impossible de se connecter à la base de données.  Veuillez vérifier votre configuration. erreur:" . $exception );
-            //     return response()->json(['message' => 'Apporteur non enregistré'], 422);
-            // }
+            DB::commit();
+            return response()->json($apporteurs, 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error($e->getMessage());
+            return response()->json(['message' => 'An error occurred while creating the apporteur.'], 500);
         }
     }
 
-    public function editApporteur($id_apporteur)
+
+    public function editApporteur($uuidApporteur)
     {
-        return Apporteur::findOrFail($id_apporteur);
+        $apporteur = Apporteur::where('uuidApporteur', $uuidApporteur)->first();
+        // return response()->json($clients);
+        return $apporteur;
     }
 
     public function deleteApporteur(int $id_apporteur)
@@ -116,9 +154,9 @@ class ApporteurRepository extends BaseRepository
         return $apporteur;
     }
 
-    public function editTauxApporteur($id_tauxapp)
+    public function editTauxApporteur($uuidTauxApporteur)
     {
-        return TauxApporteur::where('id_tauxapp', $id_tauxapp)->first();
+        return TauxApporteur::where('uuidTauxApporteur', $uuidTauxApporteur)->first();
     }
 
     public function postTauxApporteur(array $data)

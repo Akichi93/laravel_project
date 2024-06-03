@@ -85,27 +85,24 @@ class ClientController extends Controller
         }
     }
 
-    public function editClient($id_client)
+    public function editClient($uuidClient)
     {
-        $clients = Client::findOrFail($id_client);
+        $clients = Client::where('uuidClient', $uuidClient)->first();
         return response()->json($clients);
     }
 
-    public function updateClient(Request $request, $id_client)
+    public function updateClient(Request $request, $uuidClient)
     {
-        $clients = Client::find($id_client);
-        $clients->civilite = request('civilite');
-        $clients->nom_client = request('nom_client');
-        $clients->postal_client = request('postal_client');
-        $clients->adresse_client = request('adresse_client');
-        $clients->tel_client = request('tel_client');
-        $clients->profession_client = request('profession_client');
-        $clients->fax_client = request('fax_client');
-        $clients->email_client = request('email_client');
-        $clients->save();
+        $user =  JWTAuth::parseToken()->authenticate();
+        $clients = Client::where('uuidClient', $uuidClient)->update([
+            'civilite' => $request->civilite, 'nom_client' => $request->nom_client, 'postal_client' => $request->postal_client, 'adresse_client' => $request->adresse_client, 'tel_client' => $request->tel_client, 'profession_client' => $request->profession_client, 'fax_client' => $request->fax_client, 'email_client' => $request->email_client,
+        ]);
+
 
         if ($clients) {
-            $clients = Client::where('id_entreprise', $request->id_entreprise)->latest()->paginate(10);
+            $clients = Client::where('id_entreprise', $user->id_entreprise)
+                ->orderByDesc('uuidClient')
+                ->get();;
 
             return response()->json($clients);
         }
@@ -114,8 +111,9 @@ class ClientController extends Controller
     public function getClient()
     {
         $user =  JWTAuth::parseToken()->authenticate();
-        $clients = Client::select('uuidClient', 'adresse_client', 'civilite', 'email_client', 'fax_client', 'id_entreprise', 'nom_client', 'numero_client', 'postal_client', 'profession_client', 'supprimer_client', 'sync', 'tel_client','user_id')
-            ->where('id_entreprise', $user->id_entreprise)->get();
+        $clients = Client::select('uuidClient', 'adresse_client', 'civilite', 'email_client', 'fax_client', 'id_entreprise', 'nom_client', 'numero_client', 'postal_client', 'profession_client', 'supprimer_client', 'sync', 'tel_client', 'user_id')
+            ->where('id_entreprise', $user->id_entreprise)
+            ->get();
 
         return response()->json($clients);
     }

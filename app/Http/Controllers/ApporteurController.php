@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Avenant;
 use App\Models\Branche;
 use App\Models\Apporteur;
 use Illuminate\Http\Request;
 use App\Models\TauxApporteur;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\ApporteurRequest;
 use App\Repositories\ApporteurRepository;
 use Symfony\Component\HttpFoundation\Response;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class ApporteurController extends Controller
 {
@@ -92,9 +93,9 @@ class ApporteurController extends Controller
       |
      */
 
-    public function editApporteur($id_apporteur)
+    public function editApporteur($uuidApporteur)
     {
-        $apporteurs = $this->apporteur->editApporteur($id_apporteur);
+        $apporteurs = $this->apporteur->editApporteur($uuidApporteur);
         return response()->json($apporteurs);
     }
 
@@ -136,9 +137,9 @@ class ApporteurController extends Controller
       |
      */
 
-    public function editTauxApporteur($id_tauxapp)
+    public function editTauxApporteur($uuidTauxApporteur)
     {
-        $apporteurs = $this->apporteur->editTauxApporteur($id_tauxapp);
+        $apporteurs = $this->apporteur->editTauxApporteur($uuidTauxApporteur);
         return response()->json($apporteurs);
     }
 
@@ -152,10 +153,10 @@ class ApporteurController extends Controller
       |
      */
 
-    public function updateApporteur(Request $request, $id_apporteur)
+    public function updateApporteur(Request $request, $uuidApporteur)
     {
 
-        $apporteurs = Apporteur::find($id_apporteur);
+        $apporteurs = Apporteur::find($uuidApporteur);
         $apporteurs->nom_apporteur = request('nom_apporteur');
         $apporteurs->email_apporteur = request('email_apporteur');
         $apporteurs->contact_apporteur = request('contact_apporteur');
@@ -164,7 +165,7 @@ class ApporteurController extends Controller
         $apporteurs->save();
 
         if ($apporteurs) {
-            $apporteurs = Apporteur::where('supprimer_apporteur', '=', '0')->where('id_entreprise', $request->id_entreprise)->latest()->paginate(10);
+            $apporteurs = Apporteur::where('supprimer_apporteur', '=', '0')->where('id_entreprise', $request->id_entreprise)->latest()->get();
 
             return response()->json($apporteurs);
         }
@@ -185,11 +186,14 @@ class ApporteurController extends Controller
       |
      */
 
-    public function getTauxApporteur($id_apporteur)
+    public function getTauxApporteur($uuidApporteur)
     {
+        $user =  JWTAuth::parseToken()->authenticate();
         $apporteurs = TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
             ->join("apporteurs", 'taux_apporteurs.id_apporteur', '=', 'apporteurs.id_apporteur')
-            ->where('taux_apporteurs.id_apporteur', $id_apporteur)->get();
+            ->where('taux_apporteurs.uuidApporteur', $uuidApporteur)
+            ->where('taux_apporteurs.id_entreprise', $user->id_entreprise)
+            ->get();
         return response()->json($apporteurs);
     }
 
@@ -204,9 +208,9 @@ class ApporteurController extends Controller
         return response()->json($apporteurs);
     }
 
-    public function getNameApporteur($id_apporteur)
+    public function getNameApporteur($uuidApporteur)
     {
-        $names = Apporteur::select('nom_apporteur')->where('id_apporteur', $id_apporteur)->first();
+        $names = Apporteur::select('nom_apporteur')->where('uuidApporteur', $uuidApporteur)->first();
         return response()->json($names);
     }
 
@@ -262,16 +266,16 @@ class ApporteurController extends Controller
         // ], Response::HTTP_OK);
     }
 
-    public function updateTauxApporteur(Request $request)
+    public function updateTauxApporteur(Request $request, $uuidTauxApporteur)
     {
         $data = $request->all();
 
-        $id_tauxapp = $data['id_tauxapp'];
+        // $id_tauxapp = $data['id_tauxapp'];
         $taux = $data['taux'];
-        $apporteurs = TauxApporteur::where('id_tauxapp', $id_tauxapp)->update(['taux' => $taux]);
+        $apporteurs = TauxApporteur::where('uuidTauxApporteur', $uuidTauxApporteur)->update(['taux' => $taux]);
         if ($apporteurs) {
             $apporteurs = TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
-                ->where('taux_apporteurs.id_apporteur', $data['id'])->get();
+                ->where('taux_apporteurs.uuidApporteur', $data['uuidApporteur'])->get();
 
             return response()->json($apporteurs);
         }
@@ -299,5 +303,46 @@ class ApporteurController extends Controller
         // $apporteurs = $this->apporteur->getApporteur();
 
         return response()->json($apporteurs);
+    }
+
+    public function infoApporteur($uuidApporteur)
+    {
+
+        $apporteurs = Avenant::select('*')
+            ->where('uuidApporteur', $uuidApporteur)
+            ->get();
+
+        return response()->json($apporteurs);
+    }
+
+    public function getSommeCommissionApporteur($uuidApporteur)
+    {
+        $apporteurs = Avenant::select('*')
+            ->where('uuidApporteur', $uuidApporteur)
+            ->get();
+
+        $totalCommissions = $apporteurs->sum('commission');
+
+        return response()->json($totalCommissions);
+    }
+
+    public function getSommeCommissionsApporteurPayer($uuidApporteur)
+    {
+        $apporteurs = Avenant::select('*')
+            ->where('uuidApporteur', $uuidApporteur)
+            ->where('payer_apporteur', '=', 1)
+            ->get();
+
+        $totalCommissions = $apporteurs->sum('commission');
+
+        return response()->json($totalCommissions);
+    }
+
+    public function getAvenantByUuid($uuidAvenant)
+    {
+        $user =  JWTAuth::parseToken()->authenticate();
+        $avenants = Avenant::where('uuidAvenant', $uuidAvenant)->first();
+
+        return response()->json($avenants);
     }
 }

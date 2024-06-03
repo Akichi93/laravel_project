@@ -13,6 +13,7 @@ use App\Models\Categorie;
 use App\Models\Localisation;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
 use App\Repositories\FormRepository;
 use App\Http\Requests\BrancheRequest;
 use Symfony\Component\HttpFoundation\Response;
@@ -284,16 +285,15 @@ class FormController extends Controller
 
     public function postLocalisations(Request $request)
     {
-        // Récupération des données
-        $data = $request->all();
 
-        $adresse = $data['ajout_adresse'];
+        $adresse = $request->nom_ville;
         if (Localisation::where('nom_ville', '=', $adresse)->count() > 0) {
             return response()->json(['message' => 'Adresse existante'], 422);
         }
-        $min = strtoupper($data['ajout_adresse']);
+        $min = strtoupper($request->nom_ville);
 
         $localisations = new Localisation();
+        $localisations->uuidLocalisation = $request->uuidLocalisation;
         $localisations->nom_ville = $min;
         $localisations->save();
 
@@ -336,13 +336,14 @@ class FormController extends Controller
         // Récupération des données
         $data = $request->all();
 
-        $marque = $data['ajout_marque'];
+        $marque = $request->marque;
         if (Marque::where('marque', '=', $marque)->count() > 0) {
             return response()->json(['message' => 'Marque existante'], 422);
         }
-        $min = strtoupper($data['ajout_marque']);
+        $min = strtoupper($request->marque);
 
         $marques = new Marque();
+        $marques->uuidMarque = $$request->marque;
         $marques->marque = $min;
         $marques->save();
 
@@ -369,15 +370,17 @@ class FormController extends Controller
     {
         // Récupération des données
         $data = $request->all();
+        Log::info($data);
 
 
-        $energie = $data['ajout_energie'];
+        $energie = $request->energie;
         if (Energie::where('energie', '=', $energie)->count() > 0) {
             return response()->json(['message' => 'Energie existante'], 422);
         }
-        $min = strtoupper($data['ajout_energie']);
+        $min = strtoupper($request->energie);
 
         $energies = new Energie();
+        $energies->uuidEnergie = $request->uuidEnergie;
         $energies->energie = $min;
         $energies->save();
 
@@ -403,13 +406,14 @@ class FormController extends Controller
         // Récupération des données
         $data = $request->all();
 
-        $couleur = $data['ajout_couleur'];
+        $couleur = $request->couleur;
         if (Couleur::where('couleur', '=', $couleur)->count() > 0) {
             return response()->json(['message' => 'Couleur existante'], 422);
         }
-        $min = strtoupper($data['ajout_couleur']);
+        $min = strtoupper($request->couleur);
 
         $couleurs = new Couleur();
+        $couleurs->uuidCouleur = $request->uuidCouleur;
         $couleurs->couleur = $min;
         $couleurs->save();
 
@@ -438,13 +442,14 @@ class FormController extends Controller
         // Récupération des données
         $data = $request->all();
 
-        $categorie = $data['ajout_cat'];
+        $categorie = $request->categorie;
         if (Categorie::where('categorie', '=', $categorie)->count() > 0) {
             return response()->json(['message' => 'Categorie existante'], 422);
         }
-        $min = strtoupper($data['ajout_cat']);
+        $min = strtoupper($request->categorie);
 
         $categories = new Categorie();
+        $categories->uuidCategorie = $request->uuidCategorie;
         $categories->categorie = $min;
         $categories->save();
 

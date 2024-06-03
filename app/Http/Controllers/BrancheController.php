@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Branche;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class BrancheController extends Controller
 {
@@ -18,52 +19,52 @@ class BrancheController extends Controller
             $branches['data'] =  Branche::where('id_entreprise', $user->id_entreprise)
                 ->where('supprimer_branche', '=', '0')
                 ->where('nom_branche', 'like', '%' . request('q') . '%')
-                ->orderByDesc('id_branche')
+                ->orderByDesc('uuidBranche')
                 ->get();
 
             return response()->json($branches);
         } else {
             $branches = Branche::where('id_entreprise', $user->id_entreprise)
                 ->where('supprimer_branche', 0)
-                ->orderByDesc('id_branche')
+                ->orderByDesc('uuidBranche')
                 ->paginate(10);
 
             return response()->json($branches);
         }
     }
-    public function editBranche($id_branche)
+    public function editBranche($uuidBranche)
     {
-        $branches = Branche::findOrFail($id_branche);
+        $branches = Branche::where('uuidBranche', $uuidBranche)->first();
         return response()->json($branches);
     }
 
 
-    public function updateBranche(Request $request, $id_branche)
+    public function updateBranche(Request $request, $uuidBranche)
     {
-        $branches = Branche::find($id_branche);
-        $branches->nom_branche = $request->nom_branche;
-        $branches->save();
+        $branches = Branche::where('uuidBranche', $uuidBranche)->update([
+            'nom_branche' => $request->nom_branche,
+        ]);
 
         if ($branches) {
             $branches =  Branche::where('id_entreprise', $request->id_entreprise)
                 ->where('supprimer_branche', 0)
-                ->orderByDesc('id_branche')
+                ->orderByDesc('uuidBranche')
                 ->get();
 
             return response()->json($branches);
         }
     }
 
-    public function deleteBranche(Request $request,$id_branche)
+    public function deleteBranche(Request $request, $uuidBranche)
     {
-        $branches = Branche::find($id_branche);
-        $branches->supprimer_branche = 1;
-        $branches->save();
+        $branches = Branche::where('uuidBranche', $uuidBranche)->update([
+            'supprimer_branche' => 1,
+        ]);
 
         if ($branches) {
             $branches =  $branches =  Branche::where('id_entreprise', $request->id_entreprise)
                 ->where('supprimer_branche', 0)
-                ->orderByDesc('id_branche')
+                ->orderByDesc('uuidBranche')
                 ->get();
 
             return response()->json($branches);

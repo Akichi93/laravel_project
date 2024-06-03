@@ -34,9 +34,9 @@ class ProspectsController extends Controller
         }
     }
 
-    public function editProspect($id_prospect)
+    public function editProspect($uuidProspect)
     {
-        $prospects = Prospect::findOrFail($id_prospect);
+        $prospects = Prospect::where('uuidProspect', $uuidProspect)->first();
         return response()->json($prospects);
     }
 
@@ -62,9 +62,6 @@ class ProspectsController extends Controller
 
         $this->validate($request, $rules, $customMessages);
 
-
-
-
         $prospects = new Prospect();
         $prospects->civilite = $request->civilite;
         $prospects->nom_prospect = $request->nom_prospect;
@@ -84,58 +81,70 @@ class ProspectsController extends Controller
         return response()->json($prospects);
     }
 
-    public function updateProspect(Request $request, $id_prospect)
+    public function updateProspect(Request $request, $uuidProspect)
     {
-        $prospects = Prospect::find($id_prospect);
-        $prospects->civilite = request('civilite');
-        $prospects->nom_prospect = request('nom_prospect');
-        $prospects->postal_prospect = request('postal_prospect');
-        $prospects->adresse_prospect = request('adresse_prospect');
-        $prospects->tel_prospect = request('tel_prospect');
-        $prospects->profession_prospect = request('profession_prospect');
-        $prospects->fax_prospect = request('fax_prospect');
-        $prospects->email_prospect = request('email_prospect');
-        $prospects->save();
+
+        $prospects = Prospect::where('uuidProspect', $uuidProspect)->update([
+            'civilite' => $request->civilite, 'nom_prospect' => $request->nom_prospect, 'postal_prospect' => $request->postal_prospect, 'adresse_prospect' => $request->adresse_prospect, 'tel_prospect' => $request->tel_prospect, 'profession_prospect' => $request->profession_prospect, 'fax_prospect' => $request->fax_prospect, 'email_prospect' => $request->email_prospect,
+        ]);
 
         if ($prospects) {
-            // $prospects = Prospect::where('id_entreprise', $user->id_entreprise)
-            // ->where('supprimer_prospect', '=', '0')
-            // ->latest()
-            // ->paginate(10);
+            $prospects =  Prospect::where('id_entreprise', $request->id_entreprise)
+                ->where('supprimer_prospect', 0)
+                ->orderByDesc('uuidProspect')
+                ->get();
 
             return response()->json($prospects);
         }
+        // $prospects = Prospect::find($id_prospect);
+        // $prospects->civilite = request('civilite');
+        // $prospects->nom_prospect = request('nom_prospect');
+        // $prospects->postal_prospect = request('postal_prospect');
+        // $prospects->adresse_prospect = request('adresse_prospect');
+        // $prospects->tel_prospect = request('tel_prospect');
+        // $prospects->profession_prospect = request('profession_prospect');
+        // $prospects->fax_prospect = request('fax_prospect');
+        // $prospects->email_prospect = request('email_prospect');
+        // $prospects->save();
+
+        // if ($prospects) {
+        //     $prospects = Prospect::where('id_entreprise', $user->id_entreprise)
+        //         ->where('supprimer_prospect', '=', '0')
+        //         ->latest()
+        //         ->paginate(10);
+
+        //     return response()->json($prospects);
+        // }
     }
 
     public function validateProspect(Request $request)
     {
         $user =  JWTAuth::parseToken()->authenticate();
-        $id = $request->id_prospect;
 
-        $prospects = Prospect::where('id_prospect', $id)->update([
+        $prospects = Prospect::where('uuidProspect', $request->uuidProspect)->update([
             'etat' => 1,
         ]);
 
-        $lastID = Client::max('id_client');
-        if ($lastID == null) {
-            $id = 1;
-            $prefix = substr($request->nom_projet, 0, 2);
-            $day = date('d');
-            $month = date('m');
-            $year = date('Y');
-            $ref = '0' . '-' . $id . '-' . intval($month) . intval($day) . $year . strtoupper($prefix);
-        } else {
-            $id = intval($lastID) + 1;
-            $prefix = substr($request->nom_projet, 0, 2);
-            $day = date('d');
-            $month = date('m');
-            $year = date('Y');
-            $ref = '0' . '-' . $id . '-' . intval($month) . intval($day) . $year . strtoupper($prefix);
-        }
+        // $lastID = Client::max('id_client');
+        // if ($lastID == null) {
+        //     $id = 1;
+        //     $prefix = substr($request->nom_projet, 0, 2);
+        //     $day = date('d');
+        //     $month = date('m');
+        //     $year = date('Y');
+        //     $ref = '0' . '-' . $id . '-' . intval($month) . intval($day) . $year . strtoupper($prefix);
+        // } else {
+        //     $id = intval($lastID) + 1;
+        //     $prefix = substr($request->nom_projet, 0, 2);
+        //     $day = date('d');
+        //     $month = date('m');
+        //     $year = date('Y');
+        //     $ref = '0' . '-' . $id . '-' . intval($month) . intval($day) . $year . strtoupper($prefix);
+        // }
 
 
         $client = new Client();
-        $client->numero_client = $ref;
+        $client->numero_client = $request->numero_client;
         $client->civilite = $request->civilite;
         $client->nom_client = $request->nom_prospect;
         $client->tel_client = $request->tel_prospect;
@@ -188,7 +197,7 @@ class ProspectsController extends Controller
         }
     }
 
-    public function getBrancheDiffProspect(Request $request, $id_prospect)
+    public function getBrancheDiffProspect(Request $request, $uuidProspect)
     {
 
         $user =  JWTAuth::parseToken()->authenticate();
@@ -196,7 +205,7 @@ class ProspectsController extends Controller
         $getbranches = Branche::where('id_entreprise', $user->id_entreprise)->pluck('id_branche')->toArray();
 
         $result = BrancheProspect::join("branches", 'branche_prospects.id_branche', '=', 'branches.id_branche')
-            ->where('branche_prospects.id_prospect', $id_prospect)->pluck('branches.id_branche')->toArray();
+            ->where('branche_prospects.id_prospect', $uuidProspect)->pluck('branches.id_branche')->toArray();
 
         $array = array_diff($getbranches, $result);
 
@@ -207,31 +216,44 @@ class ProspectsController extends Controller
 
     public function postBrancheProspect(Request $request)
     {
+
+        //Récupération des id
+        $prospect = Prospect::where('uuidProspect', $request->uuidProspect)->value('id_prospect');
+        $branche = Branche::where('uuidBranche', $request->uuidBranche)->value('id_branche');
+
+        //Insertion dans la bdd
         $prospects = new BrancheProspect();
-        $prospects->id_branche = $request->id_branche;
-        $prospects->id_prospect = $request->id;
+        $prospects->uuidProspectBranche = $request->uuidProspectBranche;
+        $prospects->id_prospect = $prospect;
+        $prospects->id_branche = $branche;
+        $prospects->uuidProspect = $request->uuidProspect;
+        $prospects->uuidBranche = $request->uuidBranche;
         $prospects->description = $request->description;
+        $prospects->id_entreprise = $request->id_entreprise;
+        $prospects->user_id = $request->id;
         $prospects->save();
+
         if ($prospects) {
             $prospects = BrancheProspect::join("branches", 'branche_prospects.id_branche', '=', 'branches.id_branche')
-                ->where('branche_prospects.id_prospect', $request->id)->get();
+                ->where('branche_prospects.id_prospect', $request->uuidProspect)->get();
 
             return response()->json($prospects);
         }
     }
 
-    public function getNameProspect(Request $request)
+    public function getNameProspect(Request $request, $uuidProspect)
     {
-        $names = Prospect::select('nom_prospect')->where('id_prospect', $request->prospect)->first();
+        $names = Prospect::select('nom_prospect')->where('uuidProspect', $uuidProspect)->first();
         return response()->json($names);
     }
 
-    public function getBrancheProspect(Request $request)
+    public function getBrancheProspect(Request $request, $uuidProspect)
     {
         // $prospects = BrancheProspect::join("branches", 'branche_prospects.id_branche', '=', 'branches.id_branche')
         //     ->where('branche_prospects.id_prospect', $request->prospect)->get();
 
         $prospects = BrancheProspect::join("branches", 'branche_prospects.id_branche', '=', 'branches.id_branche')
+            ->where('uuidProspect', $uuidProspect)
             ->get();
         return response()->json($prospects);
     }

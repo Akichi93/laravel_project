@@ -71,9 +71,9 @@ Route::group([
     // Branche
     Route::controller(BrancheController::class)->group(function () {
         Route::get('/branchesList/{q?}', 'branchesList'); // Listes des branches avec pagignation et recherche
-        Route::get('editBranche/{id_branche}', 'editBranche');
-        Route::patch('deleteBranche/{id_branche}', 'deleteBranche'); // Suppression d'une branche 
-        Route::patch('updateBranche/{id_branche}', 'updateBranche'); // Update d'une branche
+        Route::get('editbranche/{uuidBranche}', 'editBranche');
+        Route::post('deletebranche/{uuidBranche}', 'deleteBranche'); // Suppression d'une branche 
+        Route::post('updatebranche/{uuidBranche}', 'updateBranche'); // Update d'une branche
         Route::get('getBranche', 'getBranche'); // Obtenir les branches
     });
 
@@ -100,40 +100,44 @@ Route::group([
         Route::post('postcouleurs', 'postCouleurs');
         Route::post('postgenres', 'postGenres');
         Route::post('postcategories', 'postCategories');
-        Route::post('posbBranches', 'postBranches');
+        Route::post('postbranches', 'postBranches');
         Route::post('postsecteurs', 'postSecteurs');
         Route::post('createentreprise', 'createentreprise')->name('createentreprise');
     });
 
     // Apporteur
     Route::controller(ApporteurController::class)->group(function () {
-        Route::get('/apporteurList/{q?}', 'apporteursList'); // La liste des apporteurs
+        Route::get('/apporteurlist/{q?}', 'apporteursList'); // La liste des apporteurs
         Route::post('postapporteur', 'postApporteur'); // Ajouter un apporteur
-        Route::get('editApporteur/{id_apporteur}', 'editApporteur'); // Recuperer les infos d'un apporteur
-        Route::patch('deleteApporteur/{id_apporteur}', 'deleteApporteur'); // Supprimer un apporteur
-        Route::patch('updateApporteur/{id_apporteur}', 'updateApporteur'); // Update d'un apporteur
-        Route::get('getTauxApporteur/{id_apporteur}', 'getTauxApporteur'); // Obtenir les taux d'un apporteur
+        Route::get('editapporteur/{uuidApporteur}', 'editApporteur'); // Recuperer les infos d'un apporteur
+        Route::patch('deleteapporteur/{uuidApporteur}', 'deleteApporteur'); // Supprimer un apporteur
+        Route::patch('updateapporteur/{uuidApporteur}', 'updateApporteur'); // Update d'un apporteur
+        Route::get('gettauxapporteur/{uuidApporteur}', 'getTauxApporteur'); // Obtenir les taux d'un apporteur
         Route::get('gettauxapporteurs', 'getTauxApporteurs'); // Obtenir les taux d'un apporteur
-        Route::get('getNameApporteur/{id_apporteur}', 'getNameApporteur'); // Obtenir le nom de l'apporteur choisi
-        Route::get('editTauxApporteur/{id_tauxapp}', 'editTauxApporteur'); //Recuperer les infos d'un taux
-        Route::get('getBrancheDiffApporteur/{id_tauxapp}', 'getBrancheDiffApporteur'); // Obtenir branche
-        Route::post('postTauxApporteur', 'postTauxApporteur');
-        Route::post('updateTauxApporteur', 'updateTauxApporteur');
+        Route::get('getnameapporteur/{uuidApporteur}', 'getNameApporteur'); // Obtenir le nom de l'apporteur choisi
+        Route::get('edittauxapporteur/{uuidTauxApporteur}', 'editTauxApporteur'); //Recuperer les infos d'un taux
+        Route::get('getbranchediffapporteur/{uuidTauxApporteur}', 'getBrancheDiffApporteur'); // Obtenir branche
+        Route::post('posttauxapporteur', 'postTauxApporteur');
+        Route::post('updatetauxapporteur/{uuidTauxApporteur}', 'updateTauxApporteur');
+        Route::get('infoapporteur/{uuidApporteur}', 'infoApporteur');
+        Route::get('getsommecommissionapporteur/{uuidApporteur}', 'getSommeCommissionApporteur');
+        Route::get('getsommecommissionsapporteurpayer/{uuidApporteur}', 'getSommeCommissionsApporteurPayer');
         Route::get('getapporteurs', 'getApporteur'); // Obtenir les compagnies
+        Route::get('getavenantbyuuid/{uuidAvenant}', 'getAvenantByUuid');
     });
 
     // Compagnies
     Route::controller(CompagnieController::class)->group(function () {
-        Route::get('/compagnieList/{q?}',  'compagnieList'); // la liste des compagnies
+        Route::get('/compagnielist/{q?}',  'compagnieList'); // la liste des compagnies
         Route::post('postcompagnie',  'postCompagnie'); // Ajouter une compagnie
-        Route::get('editCompagnie/{id_compagnie}',  'editCompagnie'); // Recuperer les infos de la compagnie
-        Route::patch('deleteCompagnie/{id_compagnie}',  'deleteCompagnie'); // Supprimer une compagnie
-        Route::patch('updateCompagnie/{id_compagnie}',  'updateCompagnie'); // Update d'une compagnie
-        Route::get('gettauxcompagnie/{id_compagnie}',  'getTauxCompagnie'); // Obtenir les taux d'une compagnie
+        Route::get('editcompagnie/{uuidCompagnie}',  'editCompagnie'); // Recuperer les infos de la compagnie
+        Route::patch('deleteCompagnie/{uuidCompagnie}',  'deleteCompagnie'); // Supprimer une compagnie
+        Route::patch('updatecompagnie/{uuidCompagnie}',  'updateCompagnie'); // Update d'une compagnie
+        Route::get('gettauxcompagnie/{uuidCompagnie}',  'getTauxCompagnie'); // Obtenir les taux d'une compagnie
         Route::get('gettauxcompagnies',  'getTauxCompagnies'); // Obtenir les taux des compagnies
-        Route::get('getNameCompagnie/{id_compagnie}',  'getNameCompagnie'); // Obtenir le nom de la compagnie choisi
-        Route::get('editTauxCompagnie/{id_tauxcomp}',  'editTauxCompagnie'); //Recuperer les infos d'un taux
-        Route::get('getBrancheDiffCompagnie/{id_compagnie}',  'getBrancheDiffCompagnie'); // Obtenir branche
+        Route::get('getnamecompagnie/{uuidCompagnie}',  'getNameCompagnie'); // Obtenir le nom de la compagnie choisi
+        Route::get('edittauxcompagnie/{uuidTauxCompagnie}',  'editTauxCompagnie'); //Recuperer les infos d'un taux
+        Route::get('getBrancheDiffCompagnie/{uuidCompagnie}',  'getBrancheDiffCompagnie'); // Obtenir branche
         Route::post('postTauxCompagnie',  'postTauxCompagnie');
         Route::post('updateTauxCompagnie',  'updateTauxCompagnie');
         Route::get('getcompagnies',  'getCompagnie'); // Obtenir les compagnies
@@ -144,16 +148,16 @@ Route::group([
     Route::controller(ProspectsController::class)->group(function () {
         Route::get('prospectList/{q?}',  'prospectList');
         Route::post('postprospect',  'postProspect'); // Ajouter un contrat
-        Route::get('editProspect/{id_prospect}',  'editProspect');
-        Route::post('validateProspect',  'validateProspect');
-        Route::patch('deleteProspect/{id_prospect}',  'deleteProspect');
-        Route::patch('etatProspect/{id_prospect}',  'etatProspect');
-        Route::patch('updateProspect/{id_prospect}',  'updateProspect'); // Update d'une compagnie
-        Route::get('getBrancheDiffProspect/{id_prospect}',  'getBrancheDiffProspect'); // Obtenir branche
+        Route::get('editprospect/{uuidProspect}',  'editProspect');
+        Route::post('validateprospect',  'validateProspect');
+        Route::patch('deleteprospect/{id_prospect}',  'deleteProspect');
+        Route::patch('etatprospect/{uuidProspect}',  'etatProspect');
+        Route::patch('updateprospect/{uuidProspect}',  'updateProspect'); // Update d'une compagnie
+        Route::get('getbranchediffprospect/{uuidProspect}',  'getBrancheDiffProspect'); // Obtenir branche
         Route::post('postbrancheprospect',  'postBrancheProspect');
-        Route::get('getNameProspect',  'getNameProspect'); // Obtenir le nom de l'apporteur choisi
-        Route::get('getbrancheprospects',  'getBrancheProspect');
-        Route::get('getprospects',  'getProspect'); // Obtenir les prospects
+        Route::get('getnameprospect/{uuidProspect}',  'getNameProspect'); // Obtenir le nom de l'apporteur choisi
+        Route::get('getbrancheprospect/{uuidProspect}',  'getBrancheProspect');
+        Route::get('getprospects',  'getProspect'); // Obtenir les prospects  getBrancheProspect
     });
 
 
@@ -161,8 +165,8 @@ Route::group([
     Route::controller(ClientController::class)->group(function () {
         Route::get('/clientList/{q?}', 'clientList');
         Route::post('postclient', 'postClient'); // Ajouter un apporteur
-        Route::get('editClient/{id_client}', 'editClient');
-        Route::patch('updateClient/{id_client}', 'updateClient');
+        Route::get('editclient/{uuidClient}', 'editClient');
+        Route::patch('updateclient/{uuidClient}', 'updateClient');
         Route::get('getclients', 'getClient');
         Route::get('editRelance/{id_relance}', 'editRelance');
         Route::get('getRelance', 'getRelance');
@@ -173,32 +177,32 @@ Route::group([
     // Contrat
     Route::controller(ContratController::class)->group(function () {
         Route::get('/contratList/{q?}', 'contratList');
-        Route::get('editContrat/{id_contrat}', 'editContrat');
+        Route::get('editcontrat/{uuidContrat}', 'editContrat');
         Route::post('postcontrat', 'postContrat'); // Ajouter un contrat
         Route::patch('deleteContrat/{id_contrat}', 'deleteContrat');
         Route::post('soldeContrat', 'soldeContrat');
         Route::post('soldeAvenant', 'soldeAvenant');
         Route::post('reverseContrat', 'reverseContrat');
         Route::post('reverseAvenant', 'reverseAvenant');
-        Route::get('getAvenantContrat/{id_contrat}', 'getAvenantContrat'); // Obtenir les avenants d'un contrat
+        Route::get('getavenantcontrat/{uuidContrat}', 'getAvenantContrat'); // Obtenir les avenants d'un contrat
         Route::get('getInfoAvenant', 'getInfoAvenant');
         Route::get('editAvenant/{id_avenant}', 'editAvenant');
         Route::post('deleteAvenant', 'deleteAvenant');
         Route::post('postAvenant', 'postAvenant'); // Ajouter un avenant
         Route::post('postfileavenants', 'postFileAvenant');
         Route::get('getfileavenants', 'getFileAvenant');
-        Route::get('getInfoAvenantContrat', 'getInfoAvenantContrat');
-        Route::get('getInfoContrat', 'getInfoContrat');
+        Route::get('getinfoavenantcontrat/{uuidContrat}', 'getInfoAvenantContrat');
+        Route::get('getinfocontrat/{uuidContrat}', 'getInfoContrat');
         Route::get('getCountsinistre', 'getCountsinistre');
         Route::get('getInfosinistres', 'getInfosinistres');
         Route::get('getInfoFileContrat', 'getInfoFileContrat');
         Route::get('getInfoFileSinistre', 'getInfoFileSinistre');
-        Route::get('getInfoVehicules', 'getInfoVehicules');
-        Route::post('postAutomobile', 'postAutomobile');
+        Route::get('getinfovehicules/{uuidContrat}', 'getInfoVehicules');
+        Route::post('postautomobile', 'postAutomobile');
         Route::post('postGarantie', 'postGarantie');
         Route::get('getFileViewAvenant/{id_avenant}', 'getFileViewAvenant');
-        Route::get('getTauxBrancheCompagnie', 'getTauxBrancheCompagnie');
-        Route::get('getTauxBrancheApporteur', 'getTauxBrancheApporteur');
+        Route::get('gettauxbranchecompagnie', 'getTauxBrancheCompagnie');
+        Route::get('gettauxbrancheapporteur', 'getTauxBrancheApporteur');
         Route::get('getViewContrat', 'getViewContrat');
         Route::post('updateContrat', 'updateContrat'); // Update d'un contrat
         Route::get('getFactures/{id_avenant}', 'getFactures');
@@ -363,5 +367,11 @@ Route::group([
         Route::post('sync-genres', 'syncGenre');
         Route::post('sync-couleurs', 'syncCouleur');
         Route::post('sync-energies', 'syncEnergie');
+        Route::post('sync-activites', 'syncActivite');
+        Route::post('sync-reductiongroups', 'syncReductionGroup');
+        Route::post('sync-assurancetemporaires', 'syncAssuranceTemporaires');
+        Route::post('sync-assurancetemporaires', 'syncAssuranceTemporaires');
+        Route::post('sync-tarificateuraccidents', 'syncTarificateurAccidents');
+        Route::post('sync-tarificationaccidents', 'syncTarificationAccidents');
     })->middleware('throttle:100,1');
 });

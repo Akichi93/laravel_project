@@ -24,10 +24,10 @@ class StoreContratRequest extends FormRequest
     public function rules()
     {
         return [
-            'id_branche' => 'required',
-            'id_compagnie' => 'required',
-            'id_client' => 'required',
-            'id_apporteur' => 'required',
+            'uuidBranche' => 'required',
+            'uuidCompagnie' => 'required',
+            'uuidClient' => 'required',
+            'uuidApporteur' => 'required',
             'numero_police' => 'required',
             'souscrit_le' => 'required',
             'effet_police' => 'required',
@@ -40,10 +40,10 @@ class StoreContratRequest extends FormRequest
     public function messages()
     {
         return [
-            'id_branche.required' => 'Veuillez sélectionnez la branche',
-            'id_compagnie.required' => 'Veuillez selectionner la compagnie',
-            'id_client.required' => 'Veuillez selectionner un client',
-            'id_apporteur.required' => 'Veuillez selectionnez  l\'apporteur',
+            'uuidBranche.required' => 'Veuillez sélectionnez la branche',
+            'uuidCompagnie.required' => 'Veuillez selectionner la compagnie',
+            'uuidClient.required' => 'Veuillez selectionner un client',
+            'uuidApporteur.required' => 'Veuillez selectionnez  l\'apporteur',
             'numero_police.required' => 'Veuillez entrer le numéro de police',
             'souscrit_le.required' => 'Veuillez entrer la date de souscription',
             'effet_police.required' => 'Veuillez entrer la date d\'effet de police',

@@ -17,16 +17,16 @@ class JWT
      */
     public function handle(Request $request, Closure $next): Response
     {
-       // JWTAuth::parseToken()->authentificate();
+        // JWTAuth::parseToken()->authentificate();
         // return $next($request);
 
         try {
             $user = JWTAuth::parseToken()->authenticate();
-        
         } catch (Exception $e) {
             if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenInvalidException) {
                 return response()->json(['status' => 'Le jeton est invalide'], 403);
             } else if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenExpiredException) {
+                // $newToken = JWTAuth::parseToken()->refresh();
                 return response()->json(['status' => 'Le jeton est expiré'], 401);
             } else {
                 return response()->json(['status' => 'Jeton d\'autorisation non trouvé'], 404);

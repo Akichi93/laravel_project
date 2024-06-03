@@ -9,26 +9,27 @@ use App\Models\Marque;
 use App\Models\Avenant;
 use App\Models\Branche;
 use App\Models\Contrat;
+use App\Models\Couleur;
+use App\Models\Energie;
+use App\Models\Activite;
 use App\Models\Garantie;
 use App\Models\Prospect;
 use App\Models\Sinistre;
 use App\Models\Apporteur;
-use App\Models\AssuranceTemporaire;
 use App\Models\Categorie;
 use App\Models\Compagnie;
 use App\Models\Reglement;
 use App\Models\Automobile;
-use App\Models\Couleur;
-use App\Models\Energie;
 use App\Models\FraisMedical;
-use App\Models\ReductionGroupe;
-use App\Models\TarificateurAccident;
-use App\Models\TarificateurFraisMedical;
-use App\Models\TarificationAccident;
 use Illuminate\Http\Request;
 use App\Models\TauxApporteur;
 use App\Models\TauxCompagnie;
+use App\Models\ReductionGroupe;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Models\AssuranceTemporaire;
+use App\Models\TarificateurAccident;
+use App\Models\TarificationAccident;
+use App\Models\TarificateurFraisMedical;
 
 class SyncController extends Controller
 {
@@ -532,9 +533,9 @@ class SyncController extends Controller
 
         foreach ($data as $ReductionGroupData) {
             $compagnie = Compagnie::where('uuidCompagnie', $ReductionGroupData['uuidCompagnie'])->first();
-            
+
             ReductionGroupe::updateOrCreate(
-                ['uuidReductionGroupe' => $ReductionGroupData['uuidReductionGroupe']], 
+                ['uuidReductionGroupe' => $ReductionGroupData['uuidReductionGroupe']],
                 [
                     'sync' => 1,
                     'uuidCompagnie' => $ReductionGroupData['uuidCompagnie'],
@@ -573,7 +574,7 @@ class SyncController extends Controller
         }
     }
 
-   
+
 
     public function syncTarificateurAccidents(Request $request)
     {
@@ -581,30 +582,37 @@ class SyncController extends Controller
         $data = $request->all();
 
         foreach ($data as $TarificateurAccidentData) {
-        
+            $compagnie = Compagnie::where('uuidCompagnie', $TarificateurAccidentData['uuidCompagnie'])->first();
+            $activite = Activite::where('uuidActivite', $TarificateurAccidentData['uuidActivite'])->first();
             // Use updateOrCreate to create or update the Client model
             TarificateurAccident::updateOrCreate(
                 ['uuidTarificateurAccident' => $TarificateurAccidentData['uuidTarificateurAccident']], // Unique identifier
                 [
                     'sync' => 1,
-                    'classe' => $TarificateurAccidentData['classe'],
+                    'cent' => $TarificateurAccidentData['cent'],
+                    'deuxCent' => $TarificateurAccidentData['deuxCent'],
+                    'quatreCent' => $TarificateurAccidentData['quatreCent'],
+                    'cinqCent' => $TarificateurAccidentData['cinqCent'],
                     'tauxDeces' => $TarificateurAccidentData['tauxDeces'],
-                    'activite' => $TarificateurAccidentData['activite'],
+                    'uuidActivite' => $TarificateurAccidentData['uuidActivite'],
+                    'uuidCompagnie' => $compagnie['id_compagnie'],
                     'tauxIPT' => $TarificateurAccidentData['tauxIPT'],
                     'id_entreprise' => $TarificateurAccidentData['id_entreprise'],
+                    'id_compagnie' => $compagnie['id_compagnie'],
+                    'id_activite' => $activite['activite'],
                     'user_id' => $TarificateurAccidentData['id'],
                 ]
             );
         }
-     
     }
 
-    public function syncActivite(Request $request){
+    public function syncActivite(Request $request)
+    {
         // Données à synchroniser
-        $data = $request->all(); 
+        $data = $request->all();
 
         foreach ($data as $ActiviteData) {
-        
+
             // Use updateOrCreate to create or update the Client model
             TarificateurAccident::updateOrCreate(
                 ['uuidTarificateurAccident' => $ActiviteData['uuidTarificateurAccident']], // Unique identifier
@@ -619,7 +627,7 @@ class SyncController extends Controller
         }
     }
 
-   
+
 
     public function syncTarificationAccidents(Request $request)
     {
@@ -627,7 +635,7 @@ class SyncController extends Controller
 
         foreach ($data as $TarificateurAccidentData) {
             $compagnie = Compagnie::where('uuidCompagnie', $TarificateurAccidentData['uuidCompagnie'])->first();
-          
+
             TarificationAccident::updateOrCreate(
                 ['uuidTarificationAccident' => $TarificateurAccidentData['uuidTarificationAccident']], // Unique identifier
                 [

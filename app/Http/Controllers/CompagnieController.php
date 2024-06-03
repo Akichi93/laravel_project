@@ -37,7 +37,8 @@ class CompagnieController extends Controller
         $user =  JWTAuth::parseToken()->authenticate();
         $data = strlen($request->q);
         if ($data > 0) {
-            $compagnies['data'] = Compagnie::where('id_entreprise', $user->id_entreprise)->where('nom_compagnie', 'like', '%' . request('q') . '%')
+            $compagnies['data'] = Compagnie::where('id_entreprise', $user->id_entreprise)
+                ->where('nom_compagnie', 'like', '%' . request('q') . '%')
                 ->where('supprimer_compagnie', '=', '0')
                 ->orWhere('adresse_compagnie', 'like', '%' . request('q') . '%')
                 ->orWhere('code_compagnie', 'like', '%' . request('q') . '%')
@@ -76,7 +77,7 @@ class CompagnieController extends Controller
 
         if ($Data) {
             $compagnies = Compagnie::where('id_entreprise', $data['id_entreprise'])
-                ->where('supprimer_compagnie', '=', '0')->latest()->paginate(10);
+                ->where('supprimer_compagnie', '=', '0')->get();
             return response()->json($Data);
         }
 
@@ -87,9 +88,10 @@ class CompagnieController extends Controller
         // ], Response::HTTP_OK);
     }
 
-    public function editCompagnie(int $id_compagnie)
+    public function editCompagnie(string $uuidCompagnie)
     {
-        $compagnies = Compagnie::findOrFail($id_compagnie);
+        // $compagnies = Compagnie::findOrFail($uuidCompagnie);
+        $compagnies = Compagnie::where('uuidCompagnie', $uuidCompagnie)->first();
         return response()->json($compagnies);
     }
 
@@ -114,20 +116,23 @@ class CompagnieController extends Controller
         // ], Response::HTTP_OK);
     }
 
-    public function updateCompagnie(Request $request, int $id_compagnie)
+    public function updateCompagnie(Request $request, string $uuidCompagnie)
     {
-        $compagnies = Compagnie::find($id_compagnie);
-        $compagnies->nom_compagnie = request('nom_compagnie');
-        $compagnies->email_compagnie = request('email_compagnie');
-        $compagnies->contact_compagnie = request('contact_compagnie');
-        $compagnies->adresse_compagnie = request('adresse_compagnie');
-        $compagnies->save();
+        $compagnies = Compagnie::where('uuidCompagnie', $uuidCompagnie)
+            ->update(['nom_compagnie' => $request->nom_compagnie, 'email_compagnie' => $request->email_compagnie, 'contact_compagnie' => $request->contact_compagnie, 'adresse_compagnie' => $request->adresse_compagnie]);
+
+        // $compagnies = Compagnie::find($uuidCompagnie);
+        // $compagnies->nom_compagnie = request('nom_compagnie');
+        // $compagnies->email_compagnie = request('email_compagnie');
+        // $compagnies->contact_compagnie = request('contact_compagnie');
+        // $compagnies->adresse_compagnie = request('adresse_compagnie');
+        // $compagnies->save();
 
         if ($compagnies) {
 
 
             $compagnies = Compagnie::where('id_entreprise', $request->id_entreprise)
-                ->where('supprimer_compagnie', '=', '0')->latest()->paginate(10);
+                ->where('supprimer_compagnie', '=', '0')->latest()->get();
 
             return response()->json($compagnies);
         }
@@ -140,10 +145,16 @@ class CompagnieController extends Controller
         // ], Response::HTTP_OK);
     }
 
-    public function getTauxCompagnie($id_compagnie)
+    public function getTauxCompagnie($uuidCompagnie)
     {
+        $user =  JWTAuth::parseToken()->authenticate();
         $compagnies = TauxCompagnie::join("branches", 'taux_compagnies.id_branche', '=', 'branches.id_branche')
-            ->where('taux_compagnies.id_compagnie', $id_compagnie)->get();
+            ->join("compagnies", 'taux_compagnies.id_compagnie', '=', 'compagnies.id_compagnie')
+            ->where('taux_compagnies.uuidCompagnie', $uuidCompagnie)
+            ->where('taux_compagnies.id_entreprise', $user->id_entreprise)
+            ->get();
+
+        // dd($compagnies);
         return response()->json($compagnies);
     }
 
@@ -159,15 +170,15 @@ class CompagnieController extends Controller
         return response()->json($compagnies);
     }
 
-    public function getNameCompagnie($id_compagnie)
+    public function getNameCompagnie($uuidCompagnie)
     {
-        $names = Compagnie::select('nom_compagnie')->where('id_compagnie', $id_compagnie)->first();
+        $names = Compagnie::select('nom_compagnie')->where('uuidCompagnie', $uuidCompagnie)->first();
         return response()->json($names);
     }
 
-    public function editTauxCompagnie($id_tauxcomp)
+    public function editTauxCompagnie($uuidTauxCompagnie)
     {
-        $compagnies = $this->compagnie->editTauxCompagnie($id_tauxcomp);
+        $compagnies = $this->compagnie->editTauxCompagnie($uuidTauxCompagnie);
 
         return response()->json($compagnies);
     }

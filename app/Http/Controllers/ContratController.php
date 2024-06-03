@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
-use Log;
 use App\Models\Client;
 use App\Models\Avenant;
 use App\Models\Branche;
@@ -20,6 +19,7 @@ use App\Models\TauxApporteur;
 use App\Models\TauxCompagnie;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
 use App\Http\Requests\ContratRequest;
 use App\Repositories\ContratRepository;
 use App\Http\Requests\AutomobileRequest;
@@ -65,28 +65,30 @@ class ContratController extends Controller
         }
     }
 
-    public function editContrat($id_contrat)
+    public function editContrat($uuidContrat)
     {
-        $contrats = Contrat::findOrFail($id_contrat);
+        $contrats = Contrat::where('uuidContrat',$uuidContrat)->first();
         return response()->json($contrats);
     }
 
     public function postContrat(StoreContratRequest $request)
     {
+
+        Log::info($request->all());
         $validated = $request->validated();
         // try {
 
         // recuperer l'id_branche
-        $idBranche = Branche::where('uuidBranche', $request->id_branche)->value('id_branche');
+        $idBranche = Branche::where('uuidBranche', $request->uuidBranche)->value('id_branche');
 
         // recuperer l'id_client
-        $idClient = Client::where('uuidClient', $request->id_client)->value('id_client');
+        $idClient = Client::where('uuidClient', $request->uuidClient)->value('id_client');
 
         // recuperer l'id_compagnie
-        $idCompagnie = Compagnie::where('uuidCompagnie', $request->id_compagnie)->value('id_compagnie');
+        $idCompagnie = Compagnie::where('uuidCompagnie', $request->uuidCompagnie)->value('id_compagnie');
 
         // recuperer l'id_apporteur
-        $idApporteur = Apporteur::where('uuidApporteur', $request->id_apporteur)->value('id_apporteur');
+        $idApporteur = Apporteur::where('uuidApporteur', $request->uuidApporteur)->value('id_apporteur');
 
         $contrats = new Contrat();
         $contrats->id_branche = $idBranche;
@@ -131,6 +133,10 @@ class ContratController extends Controller
 
         $avenants = new Avenant();
         $avenants->id_contrat = $id;
+        $avenants->uuidAvenant = $request->uuidAvenant;
+        $avenants->uuidContrat = $request->uuidContrat;
+        $avenants->uuidCompagnie = $request->uuidCompagnie;
+        $avenants->uuidApporteur = $request->uuidAvenant;
         $avenants->annee = Carbon::createFromFormat('Y-m-d', $request->souscrit_le)->format('Y');
         $avenants->mois = Carbon::createFromFormat('Y-m-d', $request->souscrit_le)->format('m');
         $avenants->type = "Terme";
@@ -155,10 +161,10 @@ class ContratController extends Controller
         $avenants->save();
 
         // Obtenir le nom de la branche
-        $branche = Branche::select('nom_branche')->where('id_branche', $request->id_branche)->value("nom_branche");
+        // $branche = Branche::select('nom_branche')->where('id_branche', $request->id_branche)->value("nom_branche");
 
 
-        if ($branche == "AUTOMOBILE" || $branche == "MOTO") {
+        if ($request->nom_branche == "AUTOMOBILE" || $request->nom_branche == "MOTO") {
             //Ajout d'autombile
             $autos = new Automobile();
             $autos->numero_immatriculation = $request->numero_immatriculation;
@@ -387,7 +393,7 @@ class ContratController extends Controller
     }
 
 
-    public function getAvenantContrat($id_contrat)
+    public function getAvenantContrat($uuidContrat)
     {
         $avenants = Avenant::select(
             'id_avenant',
@@ -409,7 +415,7 @@ class ContratController extends Controller
             ->join("contrats", 'avenants.id_contrat', '=', 'contrats.id_contrat')
             ->join("compagnies", 'contrats.id_compagnie', '=', 'compagnies.id_compagnie')
             ->join("branches", 'contrats.id_branche', '=', 'branches.id_branche')
-            ->where('contrats.id_contrat', $id_contrat)
+            ->where('contrats.uuidContrat', $uuidContrat)
             ->where('supprimer_avenant', 0)
             ->get();
 
@@ -628,34 +634,49 @@ class ContratController extends Controller
         return response()->json($fichier);
     }
 
-    public function getInfoAvenantContrat(Request $request)
+    public function getInfoAvenantContrat($uuidContrat)
     {
         $contrats = Avenant::select(
-            DB::raw("SUM(avenants.prime_nette) AS primes"),
-            DB::raw("SUM(avenants.accessoires) AS accessoire"),
-            DB::raw("SUM(avenants.prime_ttc) AS prime"),
-            DB::raw("SUM(avenants.frais_courtier) AS frais"),
-            DB::raw("SUM(avenants.taxes_totales) AS taxes"),
-            DB::raw("SUM(avenants.commission_courtier) AS commission"),
-            DB::raw("SUM(avenants.commission) AS commission_apporteur"),
+            DB::raw("SUM(avenants.prime_nette) AS sommePrimeNette"),
+            DB::raw("SUM(avenants.accessoires) AS sommeAccessoires"),
+            DB::raw("SUM(avenants.prime_ttc) AS sommePrimeTTC"),
+            DB::raw("SUM(avenants.frais_courtier) AS sommeFraisCourtier"),
+            DB::raw("SUM(avenants.taxes_totales) AS sommeTaxesTotales"),
+            DB::raw("SUM(avenants.cfga) AS sommeFGA"),
+            DB::raw("SUM(avenants.commission_courtier) AS sommeCommissionCourtier"),
+            DB::raw("SUM(avenants.commission) AS sommeCommission"),
             'apporteurs.nom_apporteur'
         )
             ->join("contrats", 'avenants.id_contrat', '=', 'contrats.id_contrat')
             ->join("apporteurs", 'contrats.id_apporteur', '=', 'apporteurs.id_apporteur')
             ->groupBy('contrats.id_contrat')
-            ->where('contrats.id_contrat', $request->contrat)
+            ->where('contrats.uuidContrat', $uuidContrat)
             ->first();
-
+        
+        // Format the numbers with thousands separator without decimal places
+        if ($contrats) {
+            $contrats->sommePrimeNette = number_format($contrats->sommePrimeNette, 0, ',', ' ');
+            $contrats->sommeAccessoires = number_format($contrats->sommeAccessoires, 0, ',', ' ');
+            $contrats->sommePrimeTTC = number_format($contrats->sommePrimeTTC, 0, ',', ' ');
+            $contrats->sommeFraisCourtier = number_format($contrats->sommeFraisCourtier, 0, ',', ' ');
+            $contrats->sommeTaxesTotales = number_format($contrats->sommeTaxesTotales, 0, ',', ' ');
+            $contrats->sommeFGA = number_format($contrats->sommeFGA, 0, ',', ' ');
+            $contrats->sommeCommissionCourtier = number_format($contrats->sommeCommissionCourtier, 0, ',', ' ');
+            $contrats->sommeCommission = number_format($contrats->sommeCommission, 0, ',', ' ');
+        }
+        
         return response()->json($contrats);
+        
+        
     }
 
-    public function getInfoContrat(Request $request)
+    public function getInfoContrat($uuidContrat)
     {
         $infos = Contrat::join("branches", 'contrats.id_branche', '=', 'branches.id_branche')
             ->join("compagnies", 'contrats.id_compagnie', '=', 'compagnies.id_compagnie')
             ->join("apporteurs", 'contrats.id_apporteur', '=', 'apporteurs.id_apporteur')
             ->join("clients", 'contrats.id_client', '=', 'clients.id_client')
-            ->where('contrats.id_contrat', $request->contrat)->first();
+            ->where('contrats.uuidContrat', $uuidContrat)->first();
         return response()->json($infos);
     }
 
@@ -691,21 +712,25 @@ class ContratController extends Controller
         return response()->json($filesinistres);
     }
 
-    public function getInfoVehicules(Request $request)
+    public function getInfoVehicules($uuidContrat)
     {
         $automobiles = Contrat::join("automobiles", 'contrats.id_contrat', '=', 'automobiles.id_contrat')
-            ->where('contrats.id_contrat', '=', $request->contrat)
+            ->where('contrats.uuidContrat', '=', $uuidContrat)
             ->get();
 
         return response()->json($automobiles);
     }
 
-    public function postAutomobile(AutomobileRequest $request)
+    public function postAutomobile(Request $request)
     {
         // Validation du formulaire
-        $validated = $request->validated();
+        // $validated = $request->validated();
+
+        $contratId= Contrat::where('uuidContrat',$request->uuidContrat)->value('id_contrat');
 
         $automobiles = new Automobile();
+        $automobiles->uuidAutomobile = $request->uuidAutomobile;
+        $automobiles->uuidContrat = $request->uuidContrat;
         $automobiles->numero_immatriculation = $request->numero_immatriculation;
         $automobiles->identification_proprietaire = $request->identification_proprietaire;
         $automobiles->date_circulation = $request->date_circulation;
@@ -737,7 +762,7 @@ class ContratController extends Controller
         $automobiles->commission_courtier = $request->commission_courtier;
         $automobiles->zone = $request->zone;
         $automobiles->type_garantie = $request->type_garantie;
-        $automobiles->id_contrat = $request->id_contrat;
+        $automobiles->id_contrat = $contratId;
         $automobiles->save();
 
 
@@ -815,8 +840,8 @@ class ContratController extends Controller
     {
         // $idbranche = Contrat::where('id_contrat', $request->contrat)->pluck('id_branche')->first();
 
-        $tauxcompagnie = TauxCompagnie::select('tauxcomp')->where('id_compagnie', $request->compagnie)
-            ->where('id_branche', $request->branche)
+        $tauxcompagnie = TauxCompagnie::select('tauxcomp')->where('uuidCompagnie', $request->compagnie)
+            ->where('uuidBranche', $request->branche)
             ->get()->first();
 
         return response()->json($tauxcompagnie);
@@ -824,8 +849,8 @@ class ContratController extends Controller
 
     public function getTauxBrancheApporteur(Request $request)
     {
-        $taux = TauxApporteur::select('taux')->where('id_apporteur', $request->apport)
-            ->where('id_branche', $request->branche)
+        $taux = TauxApporteur::select('taux')->where('uuidApporteur', $request->apporteur)
+            ->where('uuidBranche', $request->branche)
             ->get()->first();
 
         return response()->json($taux);
@@ -933,7 +958,7 @@ class ContratController extends Controller
             ->join("compagnies", 'contrats.id_compagnie', '=', 'compagnies.id_compagnie')
             ->join("branches", 'contrats.id_branche', '=', 'branches.id_branche')
             ->where('contrats.id_entreprise', $user->id_entreprise)
-            // ->where('supprimer_contrat', '=', '0')
+            ->where('supprimer_contrat', '=', '0')
             // ->latest('contrats.created_at')
             ->get();
 
@@ -974,7 +999,7 @@ class ContratController extends Controller
         $user =  JWTAuth::parseToken()->authenticate();
         // $avenants = Avenant::where('id_entreprise', $user->id_entreprise)->get();
 
-        $avenants = Avenant::select('avenants.uuidContrat', 'annee', 'mois', 'clients.uuidClient', 'branches.uuidBranche', 'contrats.uuidContrat', 'avenants.prime_ttc', 'avenants.retrocession', 'avenants.commission', 'avenants.commission_courtier', 'branches.nom_branche','avenants.prise_charge', 'avenants.ristourne', 'avenants.prime_nette', 'date_emission', 'date_debut', 'date_fin','type', 'avenants.accessoires', 'avenants.frais_courtier', 'avenants.cfga', 'avenants.taxes_totales','compagnies.nom_compagnie', 'code_avenant', 'uuidAvenant', 'avenants.uuidApporteur', 'avenants.uuidCompagnie', 'solder', 'reverser', 'payer_apporteur', 'payer_courtier', 'supprimer_avenant', 'avenants.id_entreprise', 'avenants.sync','avenants.user_id as sync')
+        $avenants = Avenant::select('avenants.uuidContrat', 'annee', 'mois', 'clients.uuidClient', 'branches.uuidBranche', 'contrats.uuidContrat', 'avenants.prime_ttc', 'avenants.retrocession', 'avenants.commission', 'avenants.commission_courtier', 'branches.nom_branche', 'avenants.prise_charge', 'avenants.ristourne', 'avenants.prime_nette', 'date_emission', 'date_debut', 'date_fin', 'type', 'avenants.accessoires', 'avenants.frais_courtier', 'avenants.cfga', 'avenants.taxes_totales', 'compagnies.nom_compagnie', 'code_avenant', 'uuidAvenant', 'avenants.uuidApporteur', 'avenants.uuidCompagnie', 'solder', 'reverser', 'payer_apporteur', 'payer_courtier', 'supprimer_avenant', 'avenants.id_entreprise', 'avenants.sync', 'avenants.user_id as sync')
             ->join("contrats", 'avenants.id_contrat', '=', 'contrats.id_contrat')
             ->join("clients", 'contrats.id_client', '=', 'clients.id_client')
             ->join("branches", 'contrats.id_branche', '=', 'branches.id_branche')
@@ -1019,7 +1044,8 @@ class ContratController extends Controller
         return response()->json($files);
     }
 
-    public function FileAvenant($uuidAvenant){
+    public function FileAvenant($uuidAvenant)
+    {
         $files = FileAvenant::where('uuidAvenant', $uuidAvenant)
             ->get();
 

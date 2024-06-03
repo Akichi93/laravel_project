@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Log;
 use App\Models\Role;
 use App\Models\Genre;
+use Ramsey\Uuid\Uuid;
 use App\Models\Marque;
 use App\Models\Branche;
 use App\Models\Couleur;
@@ -17,9 +18,9 @@ use App\Models\Profession;
 use App\Models\Localisation;
 use App\Models\TauxApporteur;
 use App\Models\TauxCompagnie;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
 use JasonGuru\LaravelMakeRepository\Repository\BaseRepository;
-use Tymon\JWTAuth\Facades\JWTAuth;
 //use Your Model
 
 /**
@@ -217,11 +218,11 @@ class FormRepository extends BaseRepository
 
     public function postCategories(array $data)
     {
-        $categorie = $data['ajout_cat'];
+        $categorie = $data['categorie'];
         if (Categorie::where('categorie', '=', $categorie)->count() > 0) {
             return response()->json(['message' => 'Categorie existante'], 422);
         } else {
-            $min = strtoupper($data['ajout_cat']);
+            $min = strtoupper($data['categorie']);
 
             $categories = new Categorie();
             $categories->categorie = $min;
@@ -251,7 +252,7 @@ class FormRepository extends BaseRepository
     {
         $user =  JWTAuth::parseToken()->authenticate();
 
-        
+
 
         $branche = $data['nom_branche'];
         if (Branche::where('nom_branche', '=', $branche)->where('id_entreprise', '=', $user->id_entreprise)->count() > 0) {
@@ -278,6 +279,8 @@ class FormRepository extends BaseRepository
         $logs->action = 'CREATION DE BRANCHE';
         $logs->save();
 
+       
+
 
         // Verifier si des apporteurs et compagnies existent
         $apporteurs = Apporteur::where('id_entreprise', $user->id_entreprise)->count();
@@ -298,8 +301,12 @@ class FormRepository extends BaseRepository
             // Ajout des permissions
             for ($i = 0; $i < count($qwerty); $i++) {
                 $assoc = new TauxApporteur();
+                $assoc->uuidApporteur = Uuid::uuid4()->toString();
+                $assoc->uuidTauxApporteur = Uuid::uuid4()->toString();
                 $assoc->id_branche = $lastID;
+                $assoc->uuidBranche = $data['uuidBranche'];
                 $assoc->id_apporteur = $qwerty[$i];
+                $assoc->id_entreprise = $data['id_entreprise'];
                 $assoc->taux = 0;
                 $assoc->save();
             }
@@ -315,11 +322,15 @@ class FormRepository extends BaseRepository
             foreach ($idcompagnie as $get) {
                 $azerty[] = $get->id_compagnie;
             }
-
+            $lastID = Branche::where('id_entreprise', $user->id_entreprise)->max('id_branche');
             // Ajout des taux compagnies
             for ($i = 0; $i < count($azerty); $i++) {
                 $assoc = new TauxCompagnie();
+                $assoc->uuidCompagnie = Uuid::uuid4()->toString();
+                $assoc->uuidTauxCompagnie = Uuid::uuid4()->toString();
                 $assoc->id_branche = $lastID;
+                $assoc->uuidBranche = $data['uuidBranche'];
+                $assoc->id_entreprise = $data['id_entreprise'];
                 $assoc->id_compagnie = $azerty[$i];
                 $assoc->tauxcomp = 0;
                 $assoc->save();
