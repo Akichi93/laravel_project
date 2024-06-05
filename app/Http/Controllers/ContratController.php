@@ -167,6 +167,8 @@ class ContratController extends Controller
         if ($request->nom_branche == "AUTOMOBILE" || $request->nom_branche == "MOTO") {
             //Ajout d'autombile
             $autos = new Automobile();
+            $autos->uuidAutomobile = $request->uuidAutomobile;
+            $autos->uuidContrat = $request->uuidContrat;
             $autos->numero_immatriculation = $request->numero_immatriculation;
             $autos->identification_proprietaire = $request->identification_proprietaire;
             $autos->date_circulation = $request->date_circulation;
@@ -766,7 +768,7 @@ class ContratController extends Controller
         $automobiles->save();
 
 
-        if ($request->tierce != null) {
+        if ($request->type_garantie != null) {
             $garanties = new Garantie();
             $garanties->nom_garantie = $request->tierce;
             $garanties->id_contrat = $request->id_contrat;

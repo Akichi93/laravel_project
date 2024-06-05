@@ -2,19 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use DateTime;
+use Ramsey\Uuid\Uuid;
 use App\Models\Client;
 use App\Models\Branche;
 use App\Models\Contrat;
 use App\Models\Prospect;
 use App\Models\Sinistre;
 use App\Models\Apporteur;
-use App\Models\Automobile;
 use App\Models\Compagnie;
+use App\Models\Automobile;
 use Illuminate\Http\Request;
 use App\Models\TauxApporteur;
 use App\Models\TauxCompagnie;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class UploadController extends Controller
@@ -541,113 +544,77 @@ class UploadController extends Controller
         }
 
         $file = $request->file('import_auto');
+        $rows  = array_map("str_getcsv", file($file, FILE_SKIP_EMPTY_LINES));
+        $header = array_shift($rows);
 
+        $requiredHeaders = [
+            'numero_immatriculation', 'identification_proprietaire', 'date_circulation',
+            'adresse_proprietaire', 'categorie', 'marque', 'genre', 'type',
+            'carosserie', 'couleur', 'energie', 'place', 'puissance',
+            'charge', 'valeur_neuf', 'valeur_venale', 'categorie_socio_professionelle', 'permis'
+        ];
 
-        if (!empty($request->import_auto)) {
-            $file = $request->import_auto;
-            $rows  = array_map("str_getcsv", file($file, FILE_SKIP_EMPTY_LINES));
-            $header = array_shift($rows);
-            $f = fopen($file, "r");
-            $firstLine = fgets($f);
-            //get first line of csv file
-            fclose($f); // close file
-            $foundHeaders = str_getcsv(trim($firstLine), ',', '"'); //parse to array
-
-            $requiredHeaders = array('numero_immatriculation', 'identification_proprietaire', 'date_circulation', 'adresse_proprietaire', 'categorie', 'marque', 'genre', 'type', 'carosserie', 'couleur', 'option', 'entree', 'energie', 'place', 'puissance', 'charge', 'valeur_venale', 'categorie_socio_professionelle', 'permis', 'frais_courtier', 'accessoires', 'cfga', 'taxes_totales', 'prime_ttc', 'commission_courtier', 'gestion', 'commission_apporteur', 'type_garantie', 'zone');
-
-
-            if ($foundHeaders !== $requiredHeaders) {
-                echo 'Headers do not match: ' . implode(', ', $foundHeaders);
-                return response()->json('Veuillez entrer la bonne base');
-                // return back()->with('success', 'Veuillez entrer la bonne base');
-            } else {
-                $file = $request->import_auto;
-
-                // Open uploaded CSV file with read-only mode
-                $csvFile  = fopen($file, "r");
-
-                // Skip the first line
-                fgetcsv($csvFile);
-
-                // Parse data from CSV file line by line
-                while (($getData = fgetcsv($csvFile, 10000, ",")) !== FALSE) {
-                    // Get row data
-                    $numero_immatriculation[] = $getData[0];
-                    $identification_proprietaire[] = $getData[1];
-                    $date_circulation[] = $getData[2];
-                    $adresse_proprietaire[] = $getData[3];
-                    $categorie[] = $getData[4];
-                    $marque[] = $getData[5];
-                    $genre[] = $getData[6];
-                    $type[] = $getData[7];
-                    $carosserie[] = $getData[8];
-                    $couleur[] = $getData[9];
-                    $option[] = $getData[10];
-                    $entree[] = $getData[11];
-                    $energie[] = $getData[12];
-                    $place[] = $getData[13];
-                    $puissance[] = $getData[14];
-                    $charge[] = $getData[15];
-                    $valeur_venale[] = $getData[16];
-                    $categorie_socio_professionelle[] = $getData[17];
-                    $permis[] = $getData[18];
-                    $frais_courtier[] = $getData[19];
-                    $accessoires[] = $getData[20];
-                    $cfga[] = $getData[21];
-                    $taxes_totales[] = $getData[22];
-                    $prime_ttc[] = $getData[23];
-                    $commission_courtier[] = $getData[24];
-                    $gestion[] = $getData[25];
-                    $commission_apporteur[] = $getData[26];
-                    $type_garantie[] = $getData[27];
-                    $zone[] = $getData[28];
-                  
-
-
-                    $pcreate_data[] =
-                        array(
-                            'numero_immatriculation' => $getData[0],
-                            'identification_proprietaire' => $getData[1],
-                            'date_circulation' => $getData[2],
-                            'adresse_proprietaire' => $getData[3],
-                            'categorie' => $getData[4],
-                            'marque' => $getData[5],
-                            'genre' => $getData[6],
-                            'type' => $getData[7],
-                            'carosserie' => $getData[8],
-                            'couleur' => $getData[9],
-                            'option' => $getData[10],
-                            'entree' => $getData[11],
-                            'energie' => $getData[12],
-                            'place' => $getData[13],
-                            'puissance' => $getData[14],
-                            'charge' => $getData[15],
-                            'valeur_venale' => $getData[16],
-                            'categorie_socio_professionelle' => $getData[17],
-                            'permis' => $getData[18],
-                            'frais_courtier' => $getData[19],
-                            'accessoires' => $getData[20],
-                            'cfga' => $getData[21],
-                            'taxes_totales' => $getData[22],
-                            'prime_ttc' => $getData[23],
-                            'commission_courtier' => $getData[24],
-                            'gestion' => $getData[25],
-                            'commission_apporteur' => $getData[26],
-                            'type_garantie' => $getData[27],
-                            'zone' => $getData[28],
-                           
-
-                        );
-                }
-
-                foreach ($pcreate_data as $data) {
-                    Automobile::create($data);
-                }
-
-                return back()->with('success', 'Base de donnees clients importes');
-            }
+        if ($header !== $requiredHeaders) {
+            Log::info('Headers do not match');
+            return response()->json('Veuillez entrer la bonne base', 400);
         }
+
+        $contratId = Contrat::where('uuidContrat', $request->uuidContrat)->value('id_contrat');
+        $user = JWTAuth::parseToken()->authenticate();
+
+        $pcreate_data = [];
+
+        foreach ($rows as $row) {
+            if (count($row) !== count($requiredHeaders)) {
+                continue; // Skip rows with incorrect number of columns
+            }
+
+            if (!$this->validateDate($row[2])) {
+                Log::info('Invalid date format in row: ' . implode(',', $row));
+                continue; // Skip rows with invalid date format
+            }
+
+            $pcreate_data[] = [
+                'uuidAutomobile' => Uuid::uuid4()->toString(),
+                'uuidContrat' => $request->uuidContrat,
+                'numero_immatriculation' => $row[0],
+                'identification_proprietaire' => $row[1],
+                'date_circulation' => $row[2],
+                'adresse_proprietaire' => $row[3],
+                'categorie' => $row[4],
+                'marque' => $row[5],
+                'genre' => $row[6],
+                'type' => $row[7],
+                'carosserie' => $row[8],
+                'couleur' => $row[9],
+                'energie' => $row[10],
+                'place' => $row[11],
+                'puissance' => $row[12],
+                'charge' => $row[13],
+                'valeur_neuf' => $row[14],
+                'valeur_venale' => $row[15],
+                'categorie_socio_professionelle' => $row[16],
+                'permis' => $row[17],
+                'id_contrat' => $contratId,
+                'id_entreprise' => $user->id_entreprise,
+            ];
+        }
+
+        foreach ($pcreate_data as $data) {
+            Automobile::create($data);
+        }
+        // récupérer tous les vehicules
+        $autos = Automobile::where('uuidContrat', $request->uuidContrat)->get();
+
+        return response()->json($autos);
     }
+
+    private function validateDate($date, $format = 'Y-m-d')
+    {
+        $d = DateTime::createFromFormat($format, $date);
+        return $d && $d->format($format) === $date;
+    }
+
 
 
     // Validation des entetes de l'importation clients
