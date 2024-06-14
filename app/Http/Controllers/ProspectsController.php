@@ -271,4 +271,14 @@ class ProspectsController extends Controller
 
         return response()->json($prospects);
     }
+
+    public function getBrancheProspects()
+    {
+        $user =  JWTAuth::parseToken()->authenticate();
+        $prospects = BrancheProspect::join("branches", 'branche_prospects.id_branche', '=', 'branches.id_branche')
+            ->where('uuidProspect', $user->id_entreprise)
+            ->get();
+
+        return response()->json($prospects);
+    }
 }

@@ -27,7 +27,7 @@ class AuthController extends Controller
     {
         $credentials = request(['email', 'password']);
 
-        if (! $token = auth()->attempt($credentials)) {
+        if (!$token = auth()->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
@@ -100,5 +100,24 @@ class AuthController extends Controller
             // 'message' => 'Veuillez vérifier votre messagerie pour terminer.',
             'user' => $user
         ], Response::HTTP_OK);
+    }
+
+    public function checkToken(Request $request)
+    {
+        try {
+            $token = $request->token;
+
+            if (!$token) {
+                return response()->json(['valid' => false], 400);
+            }
+
+            if (auth()->check()) {
+                return response()->json(['valid' => true], 200);
+            } else {
+                return response()->json(['valid' => false], 401);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['valid' => false], 500);
+        }
     }
 }

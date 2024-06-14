@@ -43,8 +43,8 @@ class WebController extends Controller
         $data['clients'] = Client::where('id_entreprise', Auth::user()->id_entreprise)->count();
         $data['contrats'] = Contrat::where('id_entreprise', Auth::user()->id_entreprise)->count();
         $data['sinistres'] = Sinistre::where('id_entreprise', Auth::user()->id_entreprise)->count();
-        $data['depenses'] = Depense::where('id_entreprise', Auth::user()->id_entreprise)->count();
-        $data['salaires'] = Salary::where('id_entreprise', Auth::user()->id_entreprise)->count();
+        // $data['depenses'] = Depense::where('id_entreprise', Auth::user()->id_entreprise)->count();
+        // $data['salaires'] = Salary::where('id_entreprise', Auth::user()->id_entreprise)->count();
         return view('module.stat', $data);
     }
 

@@ -159,19 +159,19 @@ class ContratRepository extends BaseRepository
         // }
     }
 
-    public function deleteContrat(int $id_contrat)
+    public function deleteContrat(string $uuidContrat)
     {
-        $contrats = Contrat::find($id_contrat);
-        $contrats->supprimer_contrat = 1;
-        $contrats->save();
+        $contrats = Contrat::where('uuidContrat', $uuidContrat)->update(['supprimer_contrat' => 1]);
+        // $contrats->supprimer_contrat = 1;
+        // $contrats->save();
 
         // Supprimer avenants
 
-        $updateAvenant = Avenant::where('id_contrat',$id_contrat)->update(['supprimer_avenant' => 1]);
+        $updateAvenant = Avenant::where('uuidContrat', $uuidContrat)->update(['supprimer_avenant' => 1]);
 
         // Supprimer sinistre
 
-        $updateSinistre = Sinistre::where('id_contrat',$id_contrat)->update(['supprimer_sinistre' => 1]);
+        $updateSinistre = Sinistre::where('uuidContrat', $uuidContrat)->update(['supprimer_sinistre' => 1]);
 
         return $contrats;
     }

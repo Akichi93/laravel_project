@@ -65,6 +65,7 @@ Route::group([
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/checktoken', [AuthController::class, 'checkToken']);
 
     Route::get('/user/profile', [AuthController::class, 'userProfile']);
 
@@ -157,7 +158,9 @@ Route::group([
         Route::post('postbrancheprospect',  'postBrancheProspect');
         Route::get('getnameprospect/{uuidProspect}',  'getNameProspect'); // Obtenir le nom de l'apporteur choisi
         Route::get('getbrancheprospect/{uuidProspect}',  'getBrancheProspect');
+        Route::get('getbrancheprospect/{uuidProspect}',  'getBrancheProspect');
         Route::get('getprospects',  'getProspect'); // Obtenir les prospects  getBrancheProspect
+        Route::get('getbrancheprospects',  'getBrancheProspects'); // Obtenir les prospects  getBrancheProspect   
     });
 
 
@@ -179,14 +182,14 @@ Route::group([
         Route::get('/contratList/{q?}', 'contratList');
         Route::get('editcontrat/{uuidContrat}', 'editContrat');
         Route::post('postcontrat', 'postContrat'); // Ajouter un contrat
-        Route::patch('deleteContrat/{id_contrat}', 'deleteContrat');
+        Route::patch('deletecontrat/{uuidContrat}', 'deleteContrat');
         Route::post('soldeContrat', 'soldeContrat');
         Route::post('soldeAvenant', 'soldeAvenant');
         Route::post('reverseContrat', 'reverseContrat');
         Route::post('reverseAvenant', 'reverseAvenant');
         Route::get('getavenantcontrat/{uuidContrat}', 'getAvenantContrat'); // Obtenir les avenants d'un contrat
-        Route::get('getInfoAvenant', 'getInfoAvenant');
-        Route::get('editAvenant/{id_avenant}', 'editAvenant');
+        Route::get('getinfoavenant/{uuidContrat}', 'getInfoAvenant');
+        Route::get('editavenant/{uuidAvenant}', 'editAvenant');
         Route::post('deleteAvenant', 'deleteAvenant');
         Route::post('postAvenant', 'postAvenant'); // Ajouter un avenant
         Route::post('postfileavenants', 'postFileAvenant');
@@ -205,7 +208,7 @@ Route::group([
         Route::get('gettauxbrancheapporteur', 'getTauxBrancheApporteur');
         Route::get('getViewContrat', 'getViewContrat');
         Route::post('updateContrat', 'updateContrat'); // Update d'un contrat
-        Route::get('getFactures/{id_avenant}', 'getFactures');
+        Route::get('getfactures/{uuidAvenant}', 'getFactures');
         Route::get('getcontrats',  'getContrat'); // Obtenir les contrats
         Route::post('payeAvenant', 'payeAvenant'); // Update d'un contrat
         Route::get('getavenants', 'getAvenants'); // obtenir les avenants 
@@ -242,19 +245,13 @@ Route::group([
     Route::get('/year', [HomeController::class, 'year'])->name('year');
     Route::get('/retrievebranche', [HomeController::class, 'retrievebranche']);
 
-
-
     // Entreprise
     Route::resource('entreprises', EntrepriseController::class);
     Route::get('entreprises/edit/{id_entreprise}', [EntrepriseController::class, 'edit']);
     Route::patch('validateentreprise', [EntrepriseController::class, 'validateEntreprise']);
     Route::patch('tarificationentreprise', [EntrepriseController::class, 'tarificationEntreprise']);
 
-
-
-
     // Statistiques
-
     Route::get('/modulestat', [StatController::class, 'modulestat'])->name('modulestat');
     Route::get('/synthese', [StatController::class, 'synthese'])->name('synthese');
     Route::get('detailsclient/{id_client}', [StatController::class, 'detailsclient'])->name('detailsclient');
@@ -282,55 +279,18 @@ Route::group([
     });
 
     // RH
-    Route::controller(RhController::class)->group(function () {
-        Route::get('listeSalaire', 'listeSalaire');
-        Route::post('postSalaire', 'postSalaire');
-        Route::get('salairemoyen', 'salairemoyen');
-        Route::get('nbresalaire', 'nbresalaire');
-        Route::get('massesalariale', 'massesalariale');
-        Route::get('listeDepenses', 'listeDepenses');
-        Route::post('postDepense', 'postDepense');
-        Route::get('listeTypeDepense', 'listeTypeDepense');
-        Route::post('postTypeDepense', 'postTypeDepense');
-        Route::get('listeSecteurs', 'listeSecteurs');
-    });
+   
 
     Route::controller(AccidentIndividuelController::class)->group(function () {
         Route::get('getreductiongroups', 'getReductionGroupe');
         Route::get('getassurancetemporaires', 'getAssuranceTemporaire');
-        // Route::get('getfraismedicals', 'getFraisMedical');
         Route::get('gettarificateuraccidents', 'getTarificateurAccident');
-        // Route::get('gettarificateurfrais', 'getTarificateurFrais');
         Route::get('gettarificationaccidents', 'getTarificationAccident');
         Route::get('getactivites', 'getActivite');
-        // Route::post('postSalaire', 'postSalaire');
     });
 
 
-    // Secteurs
-    // Route::resource('secteurs', SecteurController::class);
-
-    // // Categorie dépenses
-    // Route::resource('catdepenses', CatdepenseController::class);
-    // Route::post('catdepenses/assoc', [CatdepenseController::class, 'assoc']);
-    // Route::post('/get-depense', [CatdepenseController::class, 'getdepense']);
-    // Route::get('/getresult', [CatdepenseController::class, 'getresult']);
-
-    // // Type dépenses
-    // Route::resource('typexpenses', TypedepenseController::class);
-
-    // // Dépenses
-    // Route::resource('expenditures', DepenseController::class);
-    // Route::get('/depenseslist/{q?}', [DepenseController::class, 'depenseslist']);
-
-    // Route::get('get/expires', [HomeController::class, 'getexpires'])->name('contrats/getexpires');
-    // Route::get('get/nonsoldes', [HomeController::class, 'getnonsoldes']);
-    // Route::get('get/soldes', [HomeController::class, 'getsoldes']);
-    // Route::get('get/nonreverses', [HomeController::class, 'getnonreverses']);
-    // Route::post('searchexpires', [HomeController::class, 'searchexpires']);
-    // Route::post('searchnonsolde', [HomeController::class, 'searchnonsolde']);
-    // Route::post('searchsolde', [HomeController::class, 'searchsolde']);
-    // Route::post('searchnonreverses', [HomeController::class, 'searchnonreverses']);
+    
 
 
     // Import de fichier

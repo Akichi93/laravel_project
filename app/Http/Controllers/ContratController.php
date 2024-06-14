@@ -235,9 +235,9 @@ class ContratController extends Controller
         // }
     }
 
-    public function deleteContrat($id_contrat)
+    public function deleteContrat($uuidContrat)
     {
-        $Data = $this->contrat->deleteContrat($id_contrat);
+        $Data = $this->contrat->deleteContrat($uuidContrat);
 
         return response()->json([
             'success' => true,
@@ -424,12 +424,12 @@ class ContratController extends Controller
         return response()->json($avenants);
     }
 
-    public function getInfoAvenant(Request $request)
+    public function getInfoAvenant(Request $request,$uuidContrat)
     {
         $id_contrat = $request->all();
         $contrats = Contrat::join("clients", 'contrats.id_client', '=', 'clients.id_client')
             ->join("branches", 'contrats.id_branche', '=', 'branches.id_branche')
-            ->where('id_contrat', $id_contrat)
+            ->where('uuidContrat', $uuidContrat)
             ->first();
 
         return response()->json($contrats);
@@ -443,9 +443,9 @@ class ContratController extends Controller
         return response()->json($contrats);
     }
 
-    public function editAvenant($id_avenant)
+    public function editAvenant($uuidAvenant)
     {
-        $avenants = Avenant::where('id_avenant', $id_avenant)->first();
+        $avenants = Avenant::where('uuidAvenant', $uuidAvenant)->first();
         return response()->json($avenants);
     }
 
@@ -917,7 +917,7 @@ class ContratController extends Controller
         return response()->json($id);
     }
 
-    public function getFactures(Request $request, $id_avenant)
+    public function getFactures(Request $request, $uuidAvenant)
     {
         $factures = Avenant::select(
             'id_avenant',
@@ -941,7 +941,7 @@ class ContratController extends Controller
             ->join("clients", 'contrats.id_client', '=', 'clients.id_client')
             ->join("branches", 'contrats.id_branche', '=', 'branches.id_branche')
             ->join("compagnies", 'contrats.id_compagnie', '=', 'compagnies.id_compagnie')
-            ->where('id_avenant', $id_avenant)
+            ->where('uuidAvenant', $uuidAvenant)
             ->groupBy('id_avenant')
             ->first();
 
