@@ -28,7 +28,6 @@ class FormController extends Controller
     protected $categorie;
     protected $genre;
     protected $branche;
-    protected $secteur;
     protected $role;
     protected $log;
 
@@ -41,7 +40,6 @@ class FormController extends Controller
         FormRepository $categorie,
         FormRepository $genre,
         FormRepository $branche,
-        FormRepository $secteur,
         FormRepository $role,
         FormRepository $log
     ) {
@@ -53,7 +51,6 @@ class FormController extends Controller
         $this->categorie = $categorie;
         $this->genre = $genre;
         $this->branche = $branche;
-        $this->secteur = $secteur;
         $this->role = $role;
         $this->log = $log;
     }
@@ -210,22 +207,7 @@ class FormController extends Controller
         return response()->json($branches);
     }
 
-    /*
-      |----------------------------------------------------
-      | Liste des secteurs
-      |----------------------------------------------------
-      |
-      | Cette fonction permet d'afficher
-      | la liste des secteurs.
-      |
-     */
-
-    public function getSecteurs()
-    {
-        $secteurs = $this->secteur->getSecteurs();
-
-        return response()->json($secteurs);
-    }
+  
 
     /*
       |----------------------------------------------------

@@ -10,7 +10,6 @@ use App\Models\Marque;
 use App\Models\Branche;
 use App\Models\Couleur;
 use App\Models\Energie;
-use App\Models\Secteur;
 use App\Models\Apporteur;
 use App\Models\Categorie;
 use App\Models\Compagnie;
@@ -36,7 +35,7 @@ class FormRepository extends BaseRepository
     protected $categories;
     protected $genres;
     protected $branches;
-    protected $secteurs;
+ 
     protected $roles;
     protected $logs;
 
@@ -49,7 +48,7 @@ class FormRepository extends BaseRepository
         Categorie $categories,
         Genre $genres,
         Branche $branches,
-        Secteur $secteurs,
+       
         Role $roles,
         Log $logs
     ) {
@@ -61,7 +60,7 @@ class FormRepository extends BaseRepository
         $this->categories = $categories;
         $this->genres = $genres;
         $this->branches = $branches;
-        $this->secteurs = $secteurs;
+       
         $this->roles = $roles;
         $this->logs = $logs;
     }
@@ -118,11 +117,7 @@ class FormRepository extends BaseRepository
             ->get();
     }
 
-    public function getSecteurs()
-    {
-        return Secteur::all();
-    }
-
+ 
     public function getRoles()
     {
         return Role::where('statut', 1)->get();
