@@ -172,7 +172,7 @@ Route::group([
         Route::patch('updateclient/{uuidClient}', 'updateClient');
         Route::get('getclients', 'getClient');
         Route::get('editRelance/{id_relance}', 'editRelance');
-        Route::get('getRelance', 'getRelance');
+        Route::get('getrelance', 'getRelance');
         Route::get('getOneExpiration', 'getOneExpiration');
         Route::get('getTwoExpiration', 'getTwoExpiration');
     });
