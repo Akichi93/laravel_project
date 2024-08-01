@@ -4,33 +4,52 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\Client;
+use App\Helpers\Cacher;
 use App\Models\Contrat;
 use App\Models\Relance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Cache;
+use App\Repositories\ClientRepository;
+use App\Http\Traits\AuthenticatesUsers;
+use App\Repositories\ResponseRepository;
 
 class ClientController extends Controller
 {
+    use AuthenticatesUsers;
+    protected $client;
+    protected $response;
+    protected $cacher;
+
+    public function __construct(ClientRepository $client, ResponseRepository $response, Cacher $cacher)
+    {
+        $this->client = $client;
+        $this->response = $response;
+        $this->cacher = $cacher;
+    }
+
     public function clientList(Request $request)
     {
+        $user = $this->getAuthenticatedUser();
+        $data = $request->all();
 
-        $user =  JWTAuth::parseToken()->authenticate();
-        $data = strlen($request->q);
-        if ($data > 0) {
-            $clients['data'] = Client::where('id_entreprise', $user->id_entreprise)
-                ->where('nom_client', 'like', '%' . request('q') . '%')
-                ->orWhere('adresse_client', 'like', '%' . request('q') . '%')
-                ->orWhere('numero_client', 'like', '%' . request('q') . '%')
-                ->orWhere('profession_client', 'like', '%' . request('q') . '%')
-                ->latest()
-                ->get();
-            return response()->json($clients);
-        } else {
-            $clients = Client::where('id_entreprise', $user->id_entreprise)->latest()->paginate(10);
-            return response()->json($clients);
+        try {
+            $cacheKey = 'client_' . $user->id;
+            $cachedClients = $this->cacher->getCached($cacheKey);
+
+            if ($cachedClients) {
+                $clients = $cachedClients; // Les données sont déjà décodées en tableau
+            } else {
+                $clients = $this->client->getClient($data, $user);
+                // $this->cacher->setCached($cacheKey, $prospects);
+            }
+
+            return $this->response->respondWithData($clients, 'Clients récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving customer.', 500, $e->getMessage());
         }
     }
 

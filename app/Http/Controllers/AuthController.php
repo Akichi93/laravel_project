@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 use Symfony\Component\HttpFoundation\Response;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 
 class AuthController extends Controller
 {
@@ -78,7 +81,7 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 10000000,
+            'expires_in' => auth()->factory()->getTTL(),
             'name' => auth()->user()->name,
             'user_id' => auth()->user()->id,
             'email' => auth()->user()->email,
@@ -105,19 +108,28 @@ class AuthController extends Controller
     public function checkToken(Request $request)
     {
         try {
-            $token = $request->token;
+            $token = $request->input('token');
 
-            if (!$token) {
-                return response()->json(['valid' => false], 400);
-            }
+            // Verify the token
+            JWTAuth::setToken($token)->checkOrFail();
 
-            if (auth()->check()) {
-                return response()->json(['valid' => true], 200);
-            } else {
-                return response()->json(['valid' => false], 401);
-            }
+            return response()->json(['valid' => true], 200);
+        } catch (TokenExpiredException $e) {
+            return response()->json(['message' => 'Token expired'], 401);
+        } catch (JWTException $e) {
+            return response()->json(['message' => 'Invalid token'], 401);
+        }
+    }
+
+    public function validateToken(Request $request)
+    {
+        try {
+            // Si le token est valide, il ne fera rien et passera
+            $user = JWTAuth::parseToken()->authenticate();
+            return response()->json(['valid' => true, 'user' => $user], 200);
         } catch (\Exception $e) {
-            return response()->json(['valid' => false], 500);
+            // Si le token n'est pas valide, renvoyer une réponse avec une erreur
+            return response()->json(['valid' => false, 'message' => 'Token is invalid'], 401);
         }
     }
 }

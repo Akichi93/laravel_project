@@ -50,7 +50,7 @@ class BrancheController extends Controller
                 ->where('supprimer_branche', 0)
                 ->orderByDesc('uuidBranche')
                 ->get();
-
+                
             return response()->json($branches);
         }
     }

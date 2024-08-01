@@ -8,254 +8,228 @@ use App\Models\Prospect;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\BrancheProspect;
-use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use App\Http\Traits\AuthenticatesUsers;
+use App\Repositories\ProspectRepository;
+use App\Repositories\ResponseRepository;
+use App\Http\Requests\ProspectStoreRequest;
+use App\Helpers\Cacher;
 
 class ProspectsController extends Controller
 {
+    use AuthenticatesUsers;
+    protected $prospect;
+    protected $response;
+    protected $cacher;
+
+    public function __construct(ProspectRepository $prospect, ResponseRepository $response, Cacher $cacher)
+    {
+        $this->prospect = $prospect;
+        $this->response = $response;
+        $this->cacher = $cacher;
+    }
+
     public function prospectList(Request $request)
     {
-        $user =  JWTAuth::parseToken()->authenticate();
+        $user = $this->getAuthenticatedUser();
+        $data = $request->all();
 
+        try {
+            $cacheKey = 'prospect_' . $user->id;
+            $cachedProspects = $this->cacher->getCached($cacheKey);
 
-        $data = strlen($request->q);
-        if ($data > 0) {
-            $prospects['data'] = Prospect::where('nom_prospect', 'like', '%' . request('q') . '%')
-                ->where('supprimer_prospect', '=', '0')
-                ->where('id_entreprise', $user->id_entreprise)
-                ->get();
-            return response()->json($prospects);
-        } else {
-            $prospects = Prospect::where('id_entreprise', $user->id_entreprise)
-                ->where('supprimer_prospect', '=', '0')
-                ->latest()
-                ->paginate(10);
-            return response()->json($prospects);
+            if ($cachedProspects) {
+                $prospects = $cachedProspects; // Les données sont déjà décodées en tableau
+            } else {
+                $prospects = $this->prospect->getProspect($data, $user);
+                // $this->cacher->setCached($cacheKey, $prospects);
+            }
+
+            return $this->response->respondWithData($prospects, 'Prospects récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving categories.', 500, $e->getMessage());
         }
     }
+
 
     public function editProspect($uuidProspect)
     {
-        $prospects = Prospect::where('uuidProspect', $uuidProspect)->first();
-        return response()->json($prospects);
+        try {
+            $prospects = $this->prospect->editProspect($uuidProspect);
+            return $this->response->respondWithData($prospects, 'Les informations du prospect ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving categories.', 500, $e->getMessage());
+        }
     }
 
-    public function postProspect(Request $request)
+    public function postProspect(ProspectStoreRequest $request)
     {
-        //validation
-        $rules = [
-            'civilite' => 'required',
-            'nom_prospect' => 'required',
-            'tel_prospect' => 'required|digits:10',
-            'adresse_prospect' => 'required',
-            'profession_prospect' => 'required',
-        ];
+        $user = $this->getAuthenticatedUser();
 
-        $customMessages = [
-            'civilite.required' => 'Selectionnez la civilité',
-            'nom_prospect.required' => 'Veuillez entrer le nom du prospect',
-            'tel_prospect.required' => 'Veuillez entrer le contact de l\'apporteur',
-            'tel_prospect.digits' => 'Veuillez entrer un contact de 10 chiffres',
-            'adresse_prospect.required' => 'Veuillez entrer l\'adresse du prospect',
-            'profession_prospect.required' => 'Veuillez entrer la profession du prospect',
-        ];
+        try {
+            // Get data
+            $data = $request->all();
 
-        $this->validate($request, $rules, $customMessages);
+            // Insert in database
+            $Data = $this->prospect->postProspect($data, $user);
 
-        $prospects = new Prospect();
-        $prospects->civilite = $request->civilite;
-        $prospects->nom_prospect = $request->nom_prospect;
-        $prospects->postal_prospect = $request->postal_prospect;
-        $prospects->adresse_prospect = $request->adresse_prospect;
-        $prospects->tel_prospect = $request->tel_prospect;
-        $prospects->profession_prospect = $request->profession_prospect;
-        $prospects->fax_prospect = $request->fax_prospect;
-        $prospects->email_prospect = $request->email_prospect;
-        $prospects->id_entreprise = $request->id_entreprise;
-        $prospects->user_id = $request->id;
-        $prospects->statut = $request->etat;
-        $prospects->uuidProspect = $request->uuidProspect;
-        $prospects->sync = 1;
-        $prospects->save();
+            if ($Data) {
+                // Convert the data to an array
+                $DataArray = json_decode(json_encode($Data), true);
 
-        return response()->json($prospects);
+                // Cache the prospect data
+                $this->cacher->setCached('prospect_' . $user->id, $DataArray);
+
+                return $this->response->respondWithToken($Data, $user, 'Prospect ajouté avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create Prospect.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $e->getMessage());
+        }
     }
+
 
     public function updateProspect(Request $request, $uuidProspect)
     {
+        $user = $this->getAuthenticatedUser();
+        try {
+            // Get data
+            $data = $request->all();
+            $Data = $this->prospect->updateProspect($data, $uuidProspect, $user);
 
-        $prospects = Prospect::where('uuidProspect', $uuidProspect)->update([
-            'civilite' => $request->civilite, 'nom_prospect' => $request->nom_prospect, 'postal_prospect' => $request->postal_prospect, 'adresse_prospect' => $request->adresse_prospect, 'tel_prospect' => $request->tel_prospect, 'profession_prospect' => $request->profession_prospect, 'fax_prospect' => $request->fax_prospect, 'email_prospect' => $request->email_prospect,
-        ]);
-
-        if ($prospects) {
-            $prospects =  Prospect::where('id_entreprise', $request->id_entreprise)
-                ->where('supprimer_prospect', 0)
-                ->orderByDesc('uuidProspect')
-                ->get();
-
-            return response()->json($prospects);
-        }
-        // $prospects = Prospect::find($id_prospect);
-        // $prospects->civilite = request('civilite');
-        // $prospects->nom_prospect = request('nom_prospect');
-        // $prospects->postal_prospect = request('postal_prospect');
-        // $prospects->adresse_prospect = request('adresse_prospect');
-        // $prospects->tel_prospect = request('tel_prospect');
-        // $prospects->profession_prospect = request('profession_prospect');
-        // $prospects->fax_prospect = request('fax_prospect');
-        // $prospects->email_prospect = request('email_prospect');
-        // $prospects->save();
-
-        // if ($prospects) {
-        //     $prospects = Prospect::where('id_entreprise', $user->id_entreprise)
-        //         ->where('supprimer_prospect', '=', '0')
-        //         ->latest()
-        //         ->paginate(10);
-
-        //     return response()->json($prospects);
-        // }
-    }
-
-    public function validateProspect(Request $request)
-    {
-        $user =  JWTAuth::parseToken()->authenticate();
-
-        $prospects = Prospect::where('uuidProspect', $request->uuidProspect)->update([
-            'etat' => 1,
-        ]);
-
-        // $lastID = Client::max('id_client');
-        // if ($lastID == null) {
-        //     $id = 1;
-        //     $prefix = substr($request->nom_projet, 0, 2);
-        //     $day = date('d');
-        //     $month = date('m');
-        //     $year = date('Y');
-        //     $ref = '0' . '-' . $id . '-' . intval($month) . intval($day) . $year . strtoupper($prefix);
-        // } else {
-        //     $id = intval($lastID) + 1;
-        //     $prefix = substr($request->nom_projet, 0, 2);
-        //     $day = date('d');
-        //     $month = date('m');
-        //     $year = date('Y');
-        //     $ref = '0' . '-' . $id . '-' . intval($month) . intval($day) . $year . strtoupper($prefix);
-        // }
-
-
-        $client = new Client();
-        $client->numero_client = $request->numero_client;
-        $client->civilite = $request->civilite;
-        $client->nom_client = $request->nom_prospect;
-        $client->tel_client = $request->tel_prospect;
-        $client->postal_client = $request->postal_prospect;
-        $client->adresse_client = $request->adresse_prospect;
-        $client->profession_client = $request->profession_prospect;
-        $client->fax_client = $request->fax_prospect;
-        $client->email_client = $request->email_prospect;
-        $client->id_entreprise = $request->id_entreprise;
-        $client->save();
-
-        if ($prospects) {
-            $prospects = Prospect::where('id_entreprise', $user->id_entreprise)
-                ->where('supprimer_prospect', '=', '0')
-                ->get();
-
-            return response()->json($prospects);
+            if ($Data) {
+                return $this->response->respondWithToken($Data, $user, 'Prospect modifié avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create Prospect.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $e->getMessage());
         }
     }
 
-    public function deleteProspect(Request $request, $id_prospect)
+
+    public function validateProspect(Request $request, $uuidProspect)
     {
-        $user =  JWTAuth::parseToken()->authenticate();
-        $prospects = Prospect::find($id_prospect);
-        $prospects->supprimer_prospect = 1;
-        $prospects->save();
+        $user = $this->getAuthenticatedUser();
 
-        if ($prospects) {
-            $prospects = Prospect::where('id_entreprise', $user->id_entreprise)
-                ->where('supprimer_prospect', '=', '0')
-                ->get();
+        try {
+            // Get data
+            $data = $request->all();
+            $Data = $this->prospect->updateProspect($data, $uuidProspect, $user);
 
-            return response()->json($prospects);
+
+            if ($Data) {
+                return $this->response->respondWithToken($Data, $user, 'Client ajouté avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create Customer.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $e->getMessage());
         }
     }
 
-    public function etatProspect(Request $request, $id_prospect)
+    public function deleteProspect(Request $request, $uuidProspect)
     {
-        $user =  JWTAuth::parseToken()->authenticate();
-        $prospects = Prospect::find($id_prospect);
-        $prospects->statut = $request->etat;
-        $prospects->save();
+        $user = $this->getAuthenticatedUser();
 
-        if ($prospects) {
-            $prospects = Prospect::where('id_entreprise', $user->id_entreprise)
-                ->where('supprimer_prospect', '=', '0')
-                ->get();
+        try {
+            // Get data
+            $data = $request->all();
+            $Data = $this->prospect->deleteProspect($data, $uuidProspect, $user);
 
-            return response()->json($prospects);
+
+            if ($Data) {
+                return $this->response->respondWithToken($Data, $user, 'Client supprimé avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create Customer.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $e->getMessage());
         }
     }
 
-    public function getBrancheDiffProspect(Request $request, $uuidProspect)
+    public function etatProspect(Request $request, $uuidProspect)
     {
+        $user = $this->getAuthenticatedUser();
+        try {
+            // Get data
+            $data = $request->all();
+            $Data = $this->prospect->etatProspect($data, $uuidProspect, $user);
 
-        $user =  JWTAuth::parseToken()->authenticate();
-        // Branche de l'entreprise
-        $getbranches = Branche::where('id_entreprise', $user->id_entreprise)->pluck('id_branche')->toArray();
 
-        $result = BrancheProspect::join("branches", 'branche_prospects.id_branche', '=', 'branches.id_branche')
-            ->where('branche_prospects.id_prospect', $uuidProspect)->pluck('branches.id_branche')->toArray();
+            if ($Data) {
+                // Convert the data to an array
+                $DataArray = json_decode(json_encode($Data), true);
 
-        $array = array_diff($getbranches, $result);
-
-        $branches = Branche::whereIn('id_branche', $array)->get();
-
-        return response()->json($branches);
-    }
-
-    public function postBrancheProspect(Request $request)
-    {
-
-        //Récupération des id
-        $prospect = Prospect::where('uuidProspect', $request->uuidProspect)->value('id_prospect');
-        $branche = Branche::where('uuidBranche', $request->uuidBranche)->value('id_branche');
-
-        //Insertion dans la bdd
-        $prospects = new BrancheProspect();
-        $prospects->uuidProspectBranche = $request->uuidProspectBranche;
-        $prospects->id_prospect = $prospect;
-        $prospects->id_branche = $branche;
-        $prospects->uuidProspect = $request->uuidProspect;
-        $prospects->uuidBranche = $request->uuidBranche;
-        $prospects->description = $request->description;
-        $prospects->id_entreprise = $request->id_entreprise;
-        $prospects->user_id = $request->id;
-        $prospects->save();
-
-        if ($prospects) {
-            $prospects = BrancheProspect::join("branches", 'branche_prospects.id_branche', '=', 'branches.id_branche')
-                ->where('branche_prospects.id_prospect', $request->uuidProspect)->get();
-
-            return response()->json($prospects);
+                // Cache the prospect data
+                $this->cacher->updateCached('prospect_' . $user->id, $DataArray);
+                return $this->response->respondWithToken($Data, $user, 'Changement d"état avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create Customer.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $e->getMessage());
         }
     }
 
-    public function getNameProspect(Request $request, $uuidProspect)
+    public function getBrancheDiffProspect($uuidProspect)
     {
-        $names = Prospect::select('nom_prospect')->where('uuidProspect', $uuidProspect)->first();
-        return response()->json($names);
+        $user = $this->getAuthenticatedUser();
+        try {
+            $branches = $this->prospect->getBrancheDiffProspect($uuidProspect, $user);
+            return $this->response->respondWithData($branches, 'Les informations du prospect ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving categories.', 500, $e->getMessage());
+        }
     }
 
-    public function getBrancheProspect(Request $request, $uuidProspect)
+    public function postBrancheProspect(Request $request, $uuidProspect)
     {
-        // $prospects = BrancheProspect::join("branches", 'branche_prospects.id_branche', '=', 'branches.id_branche')
-        //     ->where('branche_prospects.id_prospect', $request->prospect)->get();
 
-        $prospects = BrancheProspect::join("branches", 'branche_prospects.id_branche', '=', 'branches.id_branche')
-            ->where('uuidProspect', $uuidProspect)
-            ->get();
-        return response()->json($prospects);
+        $user = $this->getAuthenticatedUser();
+        try {
+            // Get data
+            $data = $request->all();
+            $Data = $this->prospect->postBrancheProspect($data, $uuidProspect);
+
+
+            if ($Data) {
+                // Convert the data to an array
+                // $DataArray = json_decode(json_encode($Data), true);
+
+                // // Cache the prospect data
+                // $this->cacher->updateCached('prospect_' . $user->id, $DataArray);
+                return $this->response->respondWithToken($Data, $user, 'Changement d"état avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create Customer.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $e->getMessage());
+        }
+    }
+
+    public function getNameProspect($uuidProspect)
+    {
+        try {
+            $prospects = $this->prospect->getNameProspect($uuidProspect);
+            return $this->response->respondWithData($prospects, 'Les informations du prospect ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving categories.', 500, $e->getMessage());
+        }
+    }
+
+    public function getBrancheProspect($uuidProspect)
+    {
+        try {
+            $prospects = $this->prospect->getBrancheProspect($uuidProspect);
+            return $this->response->respondWithData($prospects, 'Les informations du prospect ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving categories.', 500, $e->getMessage());
+        }
+
     }
 
     public function getProspect()
@@ -264,7 +238,7 @@ class ProspectsController extends Controller
 
         $prospects = Prospect::select('adresse_prospect', 'civilite', 'email_prospect', 'etat', 'fax_prospect', 'id_entreprise', 'nom_prospect', 'user_id as id', 'profession_prospect', 'postal_prospect', 'statut', 'supprimer_prospect', 'sync', 'tel_prospect', 'uuidProspect')
             ->where('id_entreprise', $user->id_entreprise)
-            // ->where('supprimer_prospect', 0)
+            ->where('supprimer_prospect', 0)
             ->get();
 
         // $prospects = $this->apporteur->getApporteur();

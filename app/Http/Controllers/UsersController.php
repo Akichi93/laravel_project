@@ -20,6 +20,7 @@ class UsersController extends Controller
     public function index()
     {
         $user =  JWTAuth::parseToken()->authenticate();
+        // dd($user);
         $users = User::join("roles", 'roles.id_role', '=', 'users.id_role')
             ->where('id_entreprise', $user->id_entreprise)
             ->get();
@@ -45,75 +46,49 @@ class UsersController extends Controller
      */
     public function store(Request $request)
     {
-        // //validation
+        // Validation
         $rules = [
             'name' => 'required',
             'contact' => 'required|digits:10',
-            'email' => 'required',
+            'email' => 'required|email|unique:users,email', // Ajoutez unique pour éviter les doublons d'emails
             'adresse' => 'required',
-            'password' => 'required',
+            'password' => 'required|min:6', // Ajoutez min pour exiger un mot de passe plus sûr
         ];
 
         $customMessages = [
             'name.required' => 'Entrez le nom svp',
             'email.required' => 'Veuillez entrer le contact de l\'apporteur',
+            'email.email' => 'Veuillez entrer une adresse email valide',
+            'email.unique' => 'Cette adresse email est déjà utilisée',
             'contact.digits' => 'Veuillez entrer un contact de 10 chiffres',
             'contact.required' => 'Veuillez entrer un numéro',
             'adresse.required' => 'Veuillez entrer une adresse',
-            'password.required' => 'Veuillez entrer un ùot de passe',
+            'password.required' => 'Veuillez entrer un mot de passe',
+            'password.min' => 'Le mot de passe doit contenir au moins 6 caractères',
         ];
 
         $this->validate($request, $rules, $customMessages);
 
-        // Encodage
-        // Génération du mot de passe
+        $user = new User();
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->password = Hash::make($request->password);
+        $user->contact = $request->contact;
+        $user->adresse = $request->adresse;
+        $user->id_role = $request->poste;
+        $user->id_entreprise = $request->id_entreprise;
+        $user->save();
 
+        // Génération du token JWT
+        $token = JWTAuth::fromUser($user);
 
-        try {
-            $user =  JWTAuth::parseToken()->authenticate();
-
-            $users = new User();
-            $users->name = $request->name;
-            $users->email = $request->email;
-            $users->password = Hash::make($request->password);
-            $users->contact = $request->contact;
-            $users->adresse = $request->adresse;
-            $users->id_role = $request->poste;
-            $users->id_entreprise = $user->id_entreprise;
-            $users->save();
-
-            // $to_email = $request->email;
-
-            // // envoi de mail
-            // if ($request->isMethod('post')) {
-            //     $data = $request->all();
-
-            //     $data = array(
-            //         "body" => "Notification de création de projet",
-            //         'email' => $data['email'],
-            //         'password' => $random_password,
-            //     );
-
-            //     Mail::send('emails.users', $data, function ($message) use ($to_email) {
-            //         $message->to($to_email)
-            //             ->subject('Création de compte');
-            //         $message->from('appliecommerce@gmail.com', 'FLAIR');
-            //     });
-            // }
-            if ($users) {
-
-                $users = User::join("roles", 'roles.id_role', '=', 'users.id_role')
-                    // ->where('id_entreprise', $user->id_entreprise)
-                    ->get();
-                // dd($users);
-
-                return response()->json($users);
-            }
-        } catch (\Exception $exception) {
-            die("Impossible de se connecter à la base de données.  Veuillez vérifier votre configuration. erreur:" . $exception);
-            return response()->json(['message' => 'Apporteur non enregistré'], 422);
-        }
+        // Retourner l'utilisateur et le token
+        return response()->json([
+            'user' => $user,
+            'token' => $token
+        ]);
     }
+
 
     /**
      * Display the specified resource.

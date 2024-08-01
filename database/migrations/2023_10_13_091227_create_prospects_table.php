@@ -24,7 +24,7 @@ class CreateProspectsTable extends Migration
             $table->string('profession_prospect');
             $table->string('fax_prospect')->nullable();
             $table->string('email_prospect')->nullable();
-            $table->string('etat')->default(0);
+            $table->boolean('etat')->default(false);
             $table->string('statut')->nullable();
             $table->boolean('sync')->default(false);
             $table->string('supprimer_prospect')->comment('0 = encours, 1 = supprimé')->default(0);

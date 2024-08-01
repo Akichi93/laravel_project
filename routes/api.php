@@ -66,6 +66,7 @@ Route::group([
     Route::post('/refresh', [AuthController::class, 'refresh']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/checktoken', [AuthController::class, 'checkToken']);
+    Route::post('/validatetoken', [AuthController::class, 'validateToken']);
 
     Route::get('/user/profile', [AuthController::class, 'userProfile']);
 
@@ -147,15 +148,15 @@ Route::group([
 
     // Prospects
     Route::controller(ProspectsController::class)->group(function () {
-        Route::get('prospectList/{q?}',  'prospectList');
+        Route::get('prospectlist',  'prospectList');
         Route::post('postprospect',  'postProspect'); // Ajouter un contrat
         Route::get('editprospect/{uuidProspect}',  'editProspect');
-        Route::post('validateprospect',  'validateProspect');
-        Route::patch('deleteprospect/{id_prospect}',  'deleteProspect');
-        Route::patch('etatprospect/{uuidProspect}',  'etatProspect');
-        Route::patch('updateprospect/{uuidProspect}',  'updateProspect'); // Update d'une compagnie
+        Route::post('validateprospect/{uuidProspect}',  'validateProspect');
+        Route::post('deleteprospect/{uuidProspect}',  'deleteProspect');
+        Route::post('etatprospect/{uuidProspect}',  'etatProspect');
+        Route::post('updateprospect/{uuidProspect}',  'updateProspect'); // Update d'une compagnie
         Route::get('getbranchediffprospect/{uuidProspect}',  'getBrancheDiffProspect'); // Obtenir branche
-        Route::post('postbrancheprospect',  'postBrancheProspect');
+        Route::post('postbrancheprospect/{uuidProspect}',  'postBrancheProspect');
         Route::get('getnameprospect/{uuidProspect}',  'getNameProspect'); // Obtenir le nom de l'apporteur choisi
         Route::get('getbrancheprospect/{uuidProspect}',  'getBrancheProspect');
         Route::get('getbrancheprospect/{uuidProspect}',  'getBrancheProspect');
@@ -279,7 +280,7 @@ Route::group([
     });
 
     // RH
-   
+
 
     Route::controller(AccidentIndividuelController::class)->group(function () {
         Route::get('getreductiongroups', 'getReductionGroupe');
@@ -290,7 +291,7 @@ Route::group([
     });
 
 
-    
+
 
 
     // Import de fichier
