@@ -63,7 +63,7 @@ class ProspectRepository extends BaseRepository
             return response()->json(['message' => 'Prospect existant'], 422);
         }
 
-        Log::info($data);
+
 
         try {
 
