@@ -20,6 +20,7 @@ use App\Http\Controllers\ApporteurController;
 use App\Http\Controllers\CompagnieController;
 use App\Http\Controllers\ProspectsController;
 use App\Http\Controllers\EntrepriseController;
+use App\Http\Controllers\RetrieveDataController;
 
 /*
 |--------------------------------------------------------------------------
@@ -170,12 +171,17 @@ Route::group([
         Route::get('/clientList/{q?}', 'clientList');
         Route::post('postclient', 'postClient'); // Ajouter un apporteur
         Route::get('editclient/{uuidClient}', 'editClient');
-        Route::patch('updateclient/{uuidClient}', 'updateClient');
-        Route::get('getclients', 'getClient');
+        Route::post('updateclient/{uuidClient}', 'updateClient');
         Route::get('editRelance/{id_relance}', 'editRelance');
         Route::get('getrelance', 'getRelance');
         Route::get('getOneExpiration', 'getOneExpiration');
         Route::get('getTwoExpiration', 'getTwoExpiration');
+        Route::get('client/branchbycustomer/{uuidClient}', 'getBranchByCustomer');
+    });
+
+
+    Route::controller(RetrieveDataController::class)->group(function () {
+        Route::get('getclients', 'getClient');
     });
 
     // Contrat

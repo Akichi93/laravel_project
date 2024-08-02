@@ -10,12 +10,14 @@ use App\Models\Relance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
 use App\Repositories\ClientRepository;
 use App\Http\Traits\AuthenticatesUsers;
 use App\Repositories\ResponseRepository;
+use App\Http\Requests\CustomerStoreRequest;
 
 class ClientController extends Controller
 {
@@ -43,8 +45,7 @@ class ClientController extends Controller
             if ($cachedClients) {
                 $clients = $cachedClients; // Les données sont déjà décodées en tableau
             } else {
-                $clients = $this->client->getClient($data, $user);
-                // $this->cacher->setCached($cacheKey, $prospects);
+                $clients = $this->client->clientList($data, $user);
             }
 
             return $this->response->respondWithData($clients, 'Clients récupérés avec succès.');
@@ -53,89 +54,73 @@ class ClientController extends Controller
         }
     }
 
-    public function postClient(Request $request)
+    public function postClient(CustomerStoreRequest $request)
     {
-        //validation
-        $rules = [
-            'civilite' => 'required',
-            'nom_client' => 'required',
-            'tel_client' => 'required|numeric',
-            'adresse_client' => 'required',
-            'profession_client' => 'required',
-            'email_client' => 'required|email|unique:clients',
-        ];
+        $user = $this->getAuthenticatedUser();
 
-        $customMessages = [
-            'civilite.required' => 'Selectionnez la civilité',
-            'nom_client.required' => 'Veuillez entrer le nom du client',
-            'tel_client.required' => 'Veuillez entrer le contact de l\'apporteur',
-            'tel_client.numeric' => 'Veuillez entrer un contact de',
-            'adresse_client.required' => 'Veuillez entrer l\'adresse du client',
-            'profession_client.required' => 'Veuillez entrer la profession du client',
-            'email_client.required' => 'Veuillez entrer',
-        ];
-
-        $this->validate($request, $rules, $customMessages);
+        // Validation du formulaire
+        $validated = $request->validated();
 
         try {
-            $clients = new Client();
-            $clients->numero_client = $request->numero_client;
-            $clients->civilite = $request->civilite;
-            $clients->nom_client = $request->nom_client;
-            $clients->tel_client = $request->tel_client;
-            $clients->postal_client = $request->postal_client;
-            $clients->adresse_client = $request->adresse_client;
-            $clients->profession_client = $request->profession_client;
-            $clients->fax_client = $request->fax_client;
-            $clients->email_client = $request->email_client;
-            $clients->id_entreprise = $request->id_entreprise;
-            $clients->uuidClient = $request->uuidClient;
-            $clients->user_id = $request->id;
-            $clients->save();
+            // Get data
+            $data = $request->all();
 
-            if ($clients) {
-                $clients = Client::where('id_entreprise', $request->id_entreprise)->latest();
+            // Insert in database
+            $Data = $this->client->postClient($data, $user);
 
-                return response()->json($clients);
+            if ($Data) {
+                // Convert the data to an array
+                $DataArray = json_decode(json_encode($Data), true);
+
+                // Cache the customer data
+                $this->cacher->setCached('client' . $user->id, $DataArray);
+
+                return $this->response->respondWithToken($Data, $user, 'client ajouté avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create customer.');
             }
         } catch (\Exception $exception) {
             die("Impossible de se connecter à la base de données.  Veuillez vérifier votre configuration. erreur:" . $exception);
             return response()->json(['message' => 'Apporteur non enregistré'], 422);
+        } catch (\Illuminate\Database\QueryException $queryException) {
+            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $queryException->getMessage());
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $modelNotFoundException) {
+            // Handle model not found errors
+            return response()->json(['message' => 'Le modèle demandé n\'a pas été trouvé.'], 404);
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $e->getMessage());
         }
     }
 
     public function editClient($uuidClient)
     {
-        $clients = Client::where('uuidClient', $uuidClient)->first();
-        return response()->json($clients);
+        try {
+            $clients = $this->client->editClient($uuidClient);
+            return $this->response->respondWithData($clients, 'Les informations du client ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving customer.', 500, $e->getMessage());
+        }
     }
 
     public function updateClient(Request $request, $uuidClient)
     {
-        $user =  JWTAuth::parseToken()->authenticate();
-        $clients = Client::where('uuidClient', $uuidClient)->update([
-            'civilite' => $request->civilite, 'nom_client' => $request->nom_client, 'postal_client' => $request->postal_client, 'adresse_client' => $request->adresse_client, 'tel_client' => $request->tel_client, 'profession_client' => $request->profession_client, 'fax_client' => $request->fax_client, 'email_client' => $request->email_client,
-        ]);
+        $user = $this->getAuthenticatedUser();
+        try {
+            // Get data
+            $data = $request->all();
+            $Data = $this->client->updateClient($data, $uuidClient, $user);
 
-
-        if ($clients) {
-            $clients = Client::where('id_entreprise', $user->id_entreprise)
-                ->orderByDesc('uuidClient')
-                ->get();;
-
-            return response()->json($clients);
+            if ($Data) {
+                return $this->response->respondWithToken($Data, $user, 'Client modifié avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create customer.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the customer.', 500, $e->getMessage());
         }
     }
 
-    public function getClient()
-    {
-        $user =  JWTAuth::parseToken()->authenticate();
-        $clients = Client::select('uuidClient', 'adresse_client', 'civilite', 'email_client', 'fax_client', 'id_entreprise', 'nom_client', 'numero_client', 'postal_client', 'profession_client', 'supprimer_client', 'sync', 'tel_client', 'user_id')
-            ->where('id_entreprise', $user->id_entreprise)
-            ->get();
 
-        return response()->json($clients);
-    }
 
     public function getRelance()
     {
@@ -365,5 +350,12 @@ class ClientController extends Controller
             ->get();
 
         return response()->json($seconds);
+    }
+
+    public function getBranchByCustomer($uuidClient)
+    {
+        $clients = Client::with(['contrats'])->where('uuidClient', $uuidClient)->get();
+
+        return response()->json($clients);
     }
 }
