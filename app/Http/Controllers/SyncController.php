@@ -27,6 +27,7 @@ use App\Models\TauxCompagnie;
 use App\Models\ReductionGroupe;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\AssuranceTemporaire;
+use Illuminate\Support\Facades\Log;
 use App\Models\TarificateurAccident;
 use App\Models\TarificationAccident;
 use App\Models\TarificateurFraisMedical;
@@ -39,17 +40,23 @@ class SyncController extends Controller
         // Données à synchroniser
         $data = $request->all();
 
-        // Création de l'enregistrement avec la méthode create
-        $branche = Branche::create($data);
-
-        // Mise à jour de la valeur de sync à 1
-        $branche->update(['sync' => 1]);
-
-        if ($branche) {
-            $branches = Branche::where('id_entreprise', $data['id_entreprise'])->get();
-
-            return response()->json($branches);
+        foreach ($data as $brancheData) {
+            // Use updateOrCreate to create or update the Client model
+            Branche::updateOrCreate(
+                ['uuidBranche' => $brancheData['uuidBranche']], // Unique identifier
+                [
+                    'sync' => 1,
+                    'nom_branche' => $brancheData['nom_branche'],
+                    'id_entreprise' => $brancheData['id_entreprise'],
+                    'supprimer_branche' => $brancheData['supprimer_branche'],
+                ]
+            );
         }
+
+        // Création de l'enregistrement avec la méthode create
+    
+
+     
     }
 
     public function syncProspect(Request $request)

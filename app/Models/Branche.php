@@ -15,5 +15,6 @@ class Branche extends Model
         'nom_branche',
         'id_entreprise',
         'user_id',
+        'uuidBranche',
     ];
 }
