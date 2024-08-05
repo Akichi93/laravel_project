@@ -2,23 +2,31 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\Cacher;
 use App\Models\Branche;
 use App\Models\Compagnie;
 use Illuminate\Http\Request;
 use App\Models\TauxCompagnie;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\CompagnieRequest;
+use App\Http\Traits\AuthenticatesUsers;
+use App\Repositories\ResponseRepository;
 use App\Repositories\CompagnieRepository;
 use Symfony\Component\HttpFoundation\Response;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CompagnieController extends Controller
 {
+    use AuthenticatesUsers;
     protected $compagnie;
+    protected $response;
+    protected $cacher;
 
-    public function __construct(CompagnieRepository $compagnie)
+    public function __construct(CompagnieRepository $compagnie, ResponseRepository $response, Cacher $cacher)
     {
         $this->compagnie = $compagnie;
+        $this->response = $response;
+        $this->cacher = $cacher;
     }
 
 
@@ -34,20 +42,22 @@ class CompagnieController extends Controller
      */
     public function compagnieList(Request $request)
     {
-        $user =  JWTAuth::parseToken()->authenticate();
-        $data = strlen($request->q);
-        if ($data > 0) {
-            $compagnies['data'] = Compagnie::where('id_entreprise', $user->id_entreprise)
-                ->where('nom_compagnie', 'like', '%' . request('q') . '%')
-                ->where('supprimer_compagnie', '=', '0')
-                ->orWhere('adresse_compagnie', 'like', '%' . request('q') . '%')
-                ->orWhere('code_compagnie', 'like', '%' . request('q') . '%')
-                ->get();
-            return response()->json($compagnies);
-        } else {
-            $compagnies = Compagnie::where('id_entreprise', $user->id_entreprise)
-                ->where('supprimer_compagnie', '=', '0')->latest()->paginate(10);
-            return response()->json($compagnies);
+        $user = $this->getAuthenticatedUser();
+        $data = $request->all();
+
+        try {
+            $cacheKey = 'compagnie_' . $user->id;
+            $cachedCompagnies = $this->cacher->getCached($cacheKey);
+
+            if ($cachedCompagnies) {
+                $compagnies = $cachedCompagnies;
+            } else {
+                $compagnies = $this->compagnie->compagnieList($data, $user);
+            }
+
+            return $this->response->respondWithData($compagnies, 'Compagnies récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving company.', 500, $e->getMessage());
         }
     }
 
@@ -65,212 +75,176 @@ class CompagnieController extends Controller
     public function postCompagnie(CompagnieRequest $request)
     {
 
-        // dd($request->all());
+        $user = $this->getAuthenticatedUser();
+
         // Validation du formulaire
         $validated = $request->validated();
 
-        // Récupération des données
-        $data = $request->all();
+        try {
+            // Get data
+            $data = $request->all();
 
-        // Insertion dans la bdd
-        $Data = $this->compagnie->postCompagnie($data);
+            // Insert in database
+            $Data = $this->compagnie->postCompagnie($data, $user);
 
-        if ($Data) {
-            $compagnies = Compagnie::where('id_entreprise', $data['id_entreprise'])
-                ->where('supprimer_compagnie', '=', '0')->get();
-            return response()->json($Data);
+            if ($Data) {
+                // Convert the data to an array
+                $DataArray = json_decode(json_encode($Data), true);
+
+                // Cache the customer data
+                $this->cacher->setCached('compagnie' . $user->id, $DataArray);
+
+                return $this->response->respondWithToken($Data, $user, 'compagnie ajouté avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create company.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $e->getMessage());
         }
-
-        // return response()->json([
-        //     'success' => true,
-        //     'message' => 'Compagnie enregistré avec succès',
-        //     'compagnie' => $Data
-        // ], Response::HTTP_OK);
     }
 
-    public function editCompagnie(string $uuidCompagnie)
+    public function editCompagnie($uuidCompagnie)
     {
-        // $compagnies = Compagnie::findOrFail($uuidCompagnie);
-        $compagnies = Compagnie::where('uuidCompagnie', $uuidCompagnie)->first();
-        return response()->json($compagnies);
-    }
-
-    public function deleteCompagnie(Request $request, int $id_compagnie)
-    {
-        $compagnies = Compagnie::find($id_compagnie);
-        $compagnies->supprimer_compagnie = 1;
-        $compagnies->save();
-
-        if ($compagnies) {
-            $user =  JWTAuth::parseToken()->authenticate();
-            $compagnies = Compagnie::where('id_entreprise', $user->id_entreprise)
-                ->where('supprimer_compagnie', '=', '0')->latest()->paginate(10);
-
-            return response()->json($compagnies);
+        try {
+            $compagnies = $this->compagnie->editCompagnie($uuidCompagnie);
+            return $this->response->respondWithData($compagnies, 'Les informations du client ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving customer.', 500, $e->getMessage());
         }
-        // $Data = $this->compagnie->deleteCompagnie($id_compagnie);
-
-        // return response()->json([
-        //     'success' => true,
-        //     'data' => $Data
-        // ], Response::HTTP_OK);
     }
 
-    public function updateCompagnie(Request $request, string $uuidCompagnie)
+    public function updateCompagnie(Request $request, $uuidCompagnie)
     {
-        $compagnies = Compagnie::where('uuidCompagnie', $uuidCompagnie)
-            ->update(['nom_compagnie' => $request->nom_compagnie, 'email_compagnie' => $request->email_compagnie, 'contact_compagnie' => $request->contact_compagnie, 'adresse_compagnie' => $request->adresse_compagnie]);
+        $user = $this->getAuthenticatedUser();
+        try {
+            // Get data
+            $data = $request->all();
+            $Data = $this->compagnie->updateCompagnie($data, $uuidCompagnie, $user);
 
-        // $compagnies = Compagnie::find($uuidCompagnie);
-        // $compagnies->nom_compagnie = request('nom_compagnie');
-        // $compagnies->email_compagnie = request('email_compagnie');
-        // $compagnies->contact_compagnie = request('contact_compagnie');
-        // $compagnies->adresse_compagnie = request('adresse_compagnie');
-        // $compagnies->save();
-
-        if ($compagnies) {
-
-
-            $compagnies = Compagnie::where('id_entreprise', $request->id_entreprise)
-                ->where('supprimer_compagnie', '=', '0')->latest()->get();
-
-            return response()->json($compagnies);
+            if ($Data) {
+                return $this->response->respondWithToken($Data, $user, 'compagnie modifié avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to update compagny.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while updating the company.', 500, $e->getMessage());
         }
-
-        // $Data = $this->compagnie->updateCompagnie($id_compagnie);
-
-        // return response()->json([
-        //     'success' => true,
-        //     'data' => $Data
-        // ], Response::HTTP_OK);
     }
 
-    public function getTauxCompagnie($uuidCompagnie)
+    public function deleteCompagnie(Request $request, $uuidCompagnie)
     {
-        $user =  JWTAuth::parseToken()->authenticate();
-        $compagnies = TauxCompagnie::join("branches", 'taux_compagnies.id_branche', '=', 'branches.id_branche')
-            ->join("compagnies", 'taux_compagnies.id_compagnie', '=', 'compagnies.id_compagnie')
-            ->where('taux_compagnies.uuidCompagnie', $uuidCompagnie)
-            ->where('taux_compagnies.id_entreprise', $user->id_entreprise)
-            ->get();
+        $user = $this->getAuthenticatedUser();
+        try {
+            // Get data
+            $data = $request->all();
+            $Data = $this->compagnie->deleteCompagnie($data, $uuidCompagnie, $user);
 
-        // dd($compagnies);
-        return response()->json($compagnies);
+            if ($Data) {
+                return $this->response->respondWithToken($Data, $user, 'compagnie supprimé avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to delete compagny.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while deleting the company.', 500, $e->getMessage());
+        }
     }
 
-    public function getTauxCompagnies()
+    public function getTauxCompagnieByUuuid($uuidCompagnie)
     {
-        $user =  JWTAuth::parseToken()->authenticate();
-        $compagnies = TauxCompagnie::select('uuidTauxCompagnie', 'compagnies.uuidCompagnie', 'taux_compagnies.sync', 'tauxcomp', 'branches.nom_branche', 'taux_compagnies.id_entreprise', 'branches.uuidBranche')
-            ->join("branches", 'taux_compagnies.id_branche', '=', 'branches.id_branche')
-            ->join("compagnies", 'taux_compagnies.id_compagnie', '=', 'compagnies.id_compagnie')
-            ->where('taux_compagnies.id_entreprise', $user->id_entreprise)
-            ->get();
-
-        return response()->json($compagnies);
+        $user = $this->getAuthenticatedUser();
+        try {
+            $compagnies = $this->compagnie->editCompagnie($uuidCompagnie, $user);
+            return $this->response->respondWithData($compagnies, 'Les informations ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
+
 
     public function getNameCompagnie($uuidCompagnie)
     {
-        $names = Compagnie::select('nom_compagnie')->where('uuidCompagnie', $uuidCompagnie)->first();
-        return response()->json($names);
+        try {
+            $compagnies = $this->compagnie->getNameCompagnie($uuidCompagnie);
+            return $this->response->respondWithData($compagnies, 'Les informations ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
 
     public function editTauxCompagnie($uuidTauxCompagnie)
     {
-        $compagnies = $this->compagnie->editTauxCompagnie($uuidTauxCompagnie);
-
-        return response()->json($compagnies);
+        try {
+            $compagnies = $this->compagnie->editTauxCompagnie($uuidTauxCompagnie);
+            return $this->response->respondWithData($compagnies, 'Les informations ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
 
-    public function getBrancheDiffCompagnie($id_compagnie)
+    public function getBrancheDiffCompagnie($uuidCompagnie)
     {
-        // Branche de l'entreprise
-        $getbranches = Branche::where('supprimer_branche', 0)->pluck('id_branche')->toArray();
-
-        $result = TauxCompagnie::join("branches", 'taux_compagnies.id_branche', '=', 'branches.id_branche')
-            ->where('taux_compagnies.id_compagnie', $id_compagnie)->where('supprimer_branche', 0)->pluck('branches.id_branche')->toArray();
-
-        $array = array_diff($getbranches, $result);
-
-        $branches = Branche::whereIn('id_branche', $array)->get();
-
-        return response()->json($branches);
+        try {
+            $compagnies = $this->compagnie->getBrancheDiffCompagnie($uuidCompagnie);
+            return $this->response->respondWithData($compagnies, 'Les informations ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
 
     public function postTauxCompagnie(Request $request)
     {
-        $data = $request->all();
+        $user = $this->getAuthenticatedUser();
 
-        $id_compagnie = Compagnie::where('id_entreprise', Auth::user()->id_entreprise)
-            ->where('nom_compagnie', $data['name'])->pluck('id_compagnie')->first();
+        // Validation du formulaire
+        // $validated = $request->validated();
 
-        $leads = $data['accidents'];  // valeur
-        $firsts = $data['ids']; // id
+        try {
+            // Get data
+            $data = $request->all();
 
-        $array = array_combine($firsts, $leads);
+            // Insert in database
+            $Data = $this->compagnie->postTauxCompagnie($data, $user);
 
-        foreach ($array as $key => $value) {
-            $compagnies = new TauxCompagnie();
-            $compagnies->tauxcomp = $value;
-            $compagnies->id_branche = $key;
-            $compagnies->id_compagnie = $id_compagnie;
-            $compagnies->save();
+            if ($Data) {
+                // Convert the data to an array
+                $DataArray = json_decode(json_encode($Data), true);
+
+                // Cache the customer data
+                $this->cacher->setCached('tauxcompagnie' . $user->id, $DataArray);
+
+                return $this->response->respondWithToken($Data, $user, 'Taux compagnie ajouté avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create company.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $e->getMessage());
         }
-
-        if ($compagnies) {
-            $compagnies = TauxCompagnie::join("branches", 'taux_compagnies.id_branche', '=', 'branches.id_branche')
-                ->where('taux_compagnies.id_compagnie', $data['id'])->get();
-
-            return response()->json($compagnies);
-        }
-        // $data = $request->all();
-        // // Insertion dans la bdd
-        // $Data = $this->compagnie->postTauxCompagnie($data);
-
-        // return response()->json([
-        //     'success' => true,
-        //     'message' => 'Taux compagnie ajouté avec succès',
-        //     'compagnie' => $Data
-        // ], Response::HTTP_OK);
     }
 
     public function updateTauxCompagnie(Request $request)
     {
-        $data = $request->all();
+        $user = $this->getAuthenticatedUser();
 
-        $id_tauxcomp  = $data['id_tauxcomp'];
-        $tauxcomp = $data['tauxcomp'];
-        $compagnies = TauxCompagnie::where('id_tauxcomp', $id_tauxcomp)->update(['tauxcomp' => $tauxcomp]);
+        try {
+            // Get data
+            $data = $request->all();
 
-        if ($compagnies) {
-            $compagnies = TauxCompagnie::join("branches", 'taux_compagnies.id_branche', '=', 'branches.id_branche')
-                ->where('taux_compagnies.id_compagnie', $data['id'])->get();
+            // Insert in database
+            $Data = $this->compagnie->updateTauxCompagnie($data, $user);
 
-            return response()->json($compagnies);
+            if ($Data) {
+                // Convert the data to an array
+                $DataArray = json_decode(json_encode($Data), true);
+
+                // Cache the customer data
+                $this->cacher->updateCached('tauxcompagnie' . $user->id, $DataArray);
+
+                return $this->response->respondWithToken($Data, $user, 'Taux compagnie ajouté avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create company.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $e->getMessage());
         }
-
-        // Insertion dans la bdd
-        // $Data = $this->compagnie->updateTauxCompagnie($data);
-
-        // return response()->json([
-        //     'success' => true,
-        //     'message' => 'Taux compagnie modifié avec succès',
-        //     'compagnie' => $Data
-        // ], Response::HTTP_OK);
-    }
-
-    public function getCompagnie()
-    {
-
-        $user =  JWTAuth::parseToken()->authenticate();
-        $compagnies = Compagnie::select('adresse_compagnie', 'code_compagnie', 'contact_compagnie', 'email_compagnie', 'id_entreprise', 'nom_compagnie', 'postal_compagnie', 'supprimer_compagnie', 'sync', 'user_id', 'uuidCompagnie')
-            ->where('id_entreprise', $user->id_entreprise)
-            // ->where('supprimer_compagnie', '=', '0')
-            ->get();
-
-        // $compagnies = $this->compagnie->getCompagnie();
-
-        return response()->json($compagnies);
     }
 }
