@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Compagnie;
 use Illuminate\Http\Request;
+use App\Models\TauxCompagnie;
 use App\Repositories\ClientRepository;
 use App\Http\Traits\AuthenticatesUsers;
 use App\Repositories\ResponseRepository;
@@ -14,14 +16,14 @@ class RetrieveDataController extends Controller
     use AuthenticatesUsers;
     protected $client;
     protected $response;
-   
+
 
     public function __construct(RetrieveDataRepository $client, ResponseRepository $response)
     {
         $this->client = $client;
         $this->response = $response;
     }
-    
+
     public function getClient()
     {
         $user = $this->getAuthenticatedUser();
@@ -30,5 +32,28 @@ class RetrieveDataController extends Controller
             ->get();
 
         return response()->json($clients);
+    }
+
+    public function getCompagnie()
+    {
+
+        $user = $this->getAuthenticatedUser();
+        $compagnies = Compagnie::select('adresse_compagnie', 'code_compagnie', 'contact_compagnie', 'email_compagnie', 'id_entreprise', 'nom_compagnie', 'postal_compagnie', 'supprimer_compagnie', 'sync', 'user_id', 'uuidCompagnie')
+            ->where('id_entreprise', $user->id_entreprise)
+            ->get();
+
+        return response()->json($compagnies);
+    }
+
+    public function getTauxCompagnies()
+    {
+        $user = $this->getAuthenticatedUser();
+        $compagnies = TauxCompagnie::select('uuidTauxCompagnie', 'compagnies.uuidCompagnie', 'taux_compagnies.sync', 'tauxcomp', 'branches.nom_branche', 'taux_compagnies.id_entreprise', 'branches.uuidBranche')
+            ->join("branches", 'taux_compagnies.id_branche', '=', 'branches.id_branche')
+            ->join("compagnies", 'taux_compagnies.id_compagnie', '=', 'compagnies.id_compagnie')
+            ->where('taux_compagnies.id_entreprise', $user->id_entreprise)
+            ->get();
+
+        return response()->json($compagnies);
     }
 }
