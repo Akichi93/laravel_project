@@ -43,7 +43,7 @@ class ClientController extends Controller
             $cachedClients = $this->cacher->getCached($cacheKey);
 
             if ($cachedClients) {
-                $clients = $cachedClients; // Les données sont déjà décodées en tableau
+                $clients = $cachedClients;
             } else {
                 $clients = $this->client->clientList($data, $user);
             }
@@ -79,14 +79,6 @@ class ClientController extends Controller
             } else {
                 return $this->response->respondWithError('Failed to create customer.');
             }
-        } catch (\Exception $exception) {
-            die("Impossible de se connecter à la base de données.  Veuillez vérifier votre configuration. erreur:" . $exception);
-            return response()->json(['message' => 'Apporteur non enregistré'], 422);
-        } catch (\Illuminate\Database\QueryException $queryException) {
-            return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $queryException->getMessage());
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $modelNotFoundException) {
-            // Handle model not found errors
-            return response()->json(['message' => 'Le modèle demandé n\'a pas été trouvé.'], 404);
         } catch (\Exception $e) {
             return $this->response->respondWithError('An error occurred while creating the prospect.', 500, $e->getMessage());
         }

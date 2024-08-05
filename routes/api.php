@@ -136,14 +136,12 @@ Route::group([
         Route::get('editcompagnie/{uuidCompagnie}',  'editCompagnie'); // Recuperer les infos de la compagnie
         Route::patch('deleteCompagnie/{uuidCompagnie}',  'deleteCompagnie'); // Supprimer une compagnie
         Route::patch('updatecompagnie/{uuidCompagnie}',  'updateCompagnie'); // Update d'une compagnie
-        Route::get('gettauxcompagnie/{uuidCompagnie}',  'getTauxCompagnie'); // Obtenir les taux d'une compagnie
-        Route::get('gettauxcompagnies',  'getTauxCompagnies'); // Obtenir les taux des compagnies
+        Route::get('gettauxcompagnie/{uuidCompagnie}',  'getTauxCompagnieByUuid'); // Obtenir les taux d'une compagnie
         Route::get('getnamecompagnie/{uuidCompagnie}',  'getNameCompagnie'); // Obtenir le nom de la compagnie choisi
         Route::get('edittauxcompagnie/{uuidTauxCompagnie}',  'editTauxCompagnie'); //Recuperer les infos d'un taux
         Route::get('getBrancheDiffCompagnie/{uuidCompagnie}',  'getBrancheDiffCompagnie'); // Obtenir branche
         Route::post('postTauxCompagnie',  'postTauxCompagnie');
         Route::post('updateTauxCompagnie',  'updateTauxCompagnie');
-        Route::get('getcompagnies',  'getCompagnie'); // Obtenir les compagnies
     });
 
 
@@ -182,6 +180,8 @@ Route::group([
 
     Route::controller(RetrieveDataController::class)->group(function () {
         Route::get('getclients', 'getClient');
+        Route::get('gettauxcompagnies',  'getTauxCompagnies'); // Obtenir les taux des compagnies
+        Route::get('getcompagnies',  'getCompagnie'); // Obtenir les compagnies
     });
 
     // Contrat
