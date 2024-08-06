@@ -2,24 +2,31 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\Cacher;
 use App\Models\Avenant;
-use App\Models\Branche;
-use App\Models\Apporteur;
 use Illuminate\Http\Request;
-use App\Models\TauxApporteur;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\ApporteurRequest;
+use App\Http\Traits\AuthenticatesUsers;
+use App\Repositories\ResponseRepository;
 use App\Repositories\ApporteurRepository;
-use Symfony\Component\HttpFoundation\Response;
 
 class ApporteurController extends Controller
 {
+    use AuthenticatesUsers;
     protected $apporteur;
+    protected $tauxapporteur;
+    protected $avenant;
+    protected $response;
+    protected $cacher;
 
-    public function __construct(ApporteurRepository $apporteur)
+    public function __construct(ApporteurRepository $apporteur, ApporteurRepository $tauxapporteur, ApporteurRepository $avenant, ResponseRepository $response, Cacher $cacher)
     {
         $this->apporteur = $apporteur;
+        $this->tauxapporteur = $tauxapporteur;
+        $this->avenant = $avenant;
+        $this->response = $response;
+        $this->cacher = $cacher;
     }
 
     /*
@@ -35,18 +42,22 @@ class ApporteurController extends Controller
 
     public function apporteursList(Request $request)
     {
-        $user =  JWTAuth::parseToken()->authenticate();
-        $data = strlen($request->q);
-        if ($data > 0) {
-            $apporteurs['data'] = Apporteur::orderBy('id_apporteur', 'DESC')
-                ->where('id_entreprise', $user->id_entreprise)
-                ->where('supprimer_apporteur', '=', '0')
-                ->where('nom_apporteur', 'like', '%' . request('q') . '%')
-                ->get();
-            return response()->json($apporteurs);
-        } else {
-            $apporteurs = Apporteur::where('supprimer_apporteur', '=', '0')->where('id_entreprise', $user->id_entreprise)->get();
-            return response()->json($apporteurs);
+        $user = $this->getAuthenticatedUser();
+        $data = $request->all();
+
+        try {
+            $cacheKey = 'apporteur' . $user->id;
+            $cachedApporteurs = $this->cacher->getCached($cacheKey);
+
+            if ($cachedApporteurs) {
+                $apporteurs = $cachedApporteurs;
+            } else {
+                $apporteurs = $this->apporteur->apporteursList($data, $user);
+            }
+
+            return $this->response->respondWithData($apporteurs, 'Apporteurs récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
         }
     }
 
@@ -60,27 +71,34 @@ class ApporteurController extends Controller
       |
      */
 
-    public function postApporteur(Request $request)
+    public function postApporteur(ApporteurRequest $request)
     {
+        $user = $this->getAuthenticatedUser();
+
         // Validation du formulaire
-        // $validated = $request->validated();
+        $validated = $request->validated();
 
-        // Récupération des données
-        $data = $request->all();
+        try {
+            // Get data
+            $data = $request->all();
 
-        // Insertion dans la bdd
-        $Data = $this->apporteur->postApporteur($data);
+            // Insert in database
+            $Data = $this->apporteur->postApporteur($data, $user);
 
-        if ($Data) {
-            $apporteurs = Apporteur::where('supprimer_apporteur', '=', '0')->where('id_entreprise', $data['id_entreprise'])->get();
-            return response()->json($Data);
+            if ($Data) {
+                // Convert the data to an array
+                $DataArray = json_decode(json_encode($Data), true);
+
+                // Cache the customer data
+                $this->cacher->setCached('apporteur' . $user->id, $DataArray);
+
+                return $this->response->respondWithToken($Data, $user, 'Apporteur ajouté avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating.', 500, $e->getMessage());
         }
-
-        // return response()->json([
-        //     'success' => true,
-        //     'message' => 'Apporteur enregistré avec succès',
-        //     'apporteur' => $Data
-        // ], Response::HTTP_OK);
     }
 
     /*
@@ -95,8 +113,12 @@ class ApporteurController extends Controller
 
     public function editApporteur($uuidApporteur)
     {
-        $apporteurs = $this->apporteur->editApporteur($uuidApporteur);
-        return response()->json($apporteurs);
+        try {
+            $apporteurs = $this->apporteur->editApporteur($uuidApporteur);
+            return $this->response->respondWithData($apporteurs, 'Les informations  ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
 
     /*
@@ -108,23 +130,21 @@ class ApporteurController extends Controller
       |
      */
 
-    public function deleteApporteur(Request $request, $id_apporteur)
+    public function deleteApporteur(Request $request, $uuidApporteur)
     {
 
-        $apporteurs = Apporteur::find($id_apporteur);
-        $apporteurs->supprimer_apporteur = 1;
-        $apporteurs->save();
-        if ($apporteurs) {
-            $apporteurs = Apporteur::where('supprimer_apporteur', '=', '0')->where('id_entreprise', $request->id_entreprise)->latest()->get();
+        $user = $this->getAuthenticatedUser();
+        try {
+            $Data = $this->apporteur->deleteApporteur($uuidApporteur, $user);
 
-            return response()->json($apporteurs);
+            if ($Data) {
+                return $this->response->respondWithToken($Data, $user, 'Apporteur supprimé avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to delete.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while deleting.', 500, $e->getMessage());
         }
-        // $Data = $this->apporteur->deleteApporteur($id_apporteur);
-
-        // return response()->json([
-        //     'success' => true,
-        //     'data' => $Data
-        // ], Response::HTTP_OK);
     }
 
     /*
@@ -139,42 +159,40 @@ class ApporteurController extends Controller
 
     public function editTauxApporteur($uuidTauxApporteur)
     {
-        $apporteurs = $this->apporteur->editTauxApporteur($uuidTauxApporteur);
-        return response()->json($apporteurs);
+        try {
+            $apporteurs = $this->tauxapporteur->editTauxApporteur($uuidTauxApporteur);
+            return $this->response->respondWithData($apporteurs, 'Les informations  ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
 
     /*
       |----------------------------------------------------
-      | Mise à jour  apporteur
+      | Mise à jour apporteur
       |----------------------------------------------------
       |
       | Cette fonction permet de mettre à jour les infos
-      | un apporteur d'un apporteur en fonction de son id.
+      | un apporteur d'un apporteur en fonction de son uuid.
       |
      */
 
     public function updateApporteur(Request $request, $uuidApporteur)
     {
+        $user = $this->getAuthenticatedUser();
+        try {
+            // Get data
+            $data = $request->all();
+            $Data = $this->apporteur->updateApporteur($data, $uuidApporteur, $user);
 
-        $apporteurs = Apporteur::find($uuidApporteur);
-        $apporteurs->nom_apporteur = request('nom_apporteur');
-        $apporteurs->email_apporteur = request('email_apporteur');
-        $apporteurs->contact_apporteur = request('contact_apporteur');
-        $apporteurs->adresse_apporteur = request('adresse_apporteur');
-        $apporteurs->code_postal = request('code_postal');
-        $apporteurs->save();
-
-        if ($apporteurs) {
-            $apporteurs = Apporteur::where('supprimer_apporteur', '=', '0')->where('id_entreprise', $request->id_entreprise)->latest()->get();
-
-            return response()->json($apporteurs);
+            if ($Data) {
+                return $this->response->respondWithToken($Data, $user, 'Client modifié avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to create customer.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while creating the customer.', 500, $e->getMessage());
         }
-
-        // $Data = $this->apporteur->updateApporteur($id_apporteur);
-        // return response()->json([
-        //     'success' => true,
-        //     'data' => $Data
-        // ], Response::HTTP_OK);
     }
 
     /*
@@ -188,161 +206,196 @@ class ApporteurController extends Controller
 
     public function getTauxApporteur($uuidApporteur)
     {
-        $user =  JWTAuth::parseToken()->authenticate();
-        $apporteurs = TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
-            ->join("apporteurs", 'taux_apporteurs.id_apporteur', '=', 'apporteurs.id_apporteur')
-            ->where('taux_apporteurs.uuidApporteur', $uuidApporteur)
-            ->where('taux_apporteurs.id_entreprise', $user->id_entreprise)
-            ->get();
-        return response()->json($apporteurs);
+        $user = $this->getAuthenticatedUser();
+        try {
+            $apporteurs = $this->tauxapporteur->getTauxApporteur($uuidApporteur, $user);
+            return $this->response->respondWithData($apporteurs, 'Les informations  ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
 
-    public function getTauxApporteurs()
-    {
-        $user =  JWTAuth::parseToken()->authenticate();
-        $apporteurs = TauxApporteur::select('uuidTauxApporteur', 'apporteurs.uuidApporteur', 'taux_apporteurs.sync', 'taux', 'branches.nom_branche', 'taux_apporteurs.id_entreprise', 'branches.uuidBranche')
-            ->join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
-            ->join("apporteurs", 'taux_apporteurs.id_apporteur', '=', 'apporteurs.id_apporteur')
-            ->where('taux_apporteurs.id_entreprise', $user->id_entreprise)
-            ->get();
-        return response()->json($apporteurs);
-    }
+    /*
+      |----------------------------------------------------
+      | Obtenir le nom de l'apporteur
+      |----------------------------------------------------
+      |
+      | Cette fonction permet d'obtenir le nom de l'apporteur
+      |
+      | en fonction du uuid
+      |
+     */
 
     public function getNameApporteur($uuidApporteur)
     {
-        $names = Apporteur::select('nom_apporteur')->where('uuidApporteur', $uuidApporteur)->first();
-        return response()->json($names);
+
+        try {
+            $apporteurs = $this->apporteur->getNameApporteur($uuidApporteur);
+            return $this->response->respondWithData($apporteurs, 'Les informations  ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
 
-    public function getBrancheDiffApporteur($id_apporteur)
+    /*
+      |----------------------------------------------------
+      | Obtenir la différence de branche
+      |----------------------------------------------------
+      |
+      | Cette fonction permet d'obtenir la différence 
+      |
+      | 
+      |
+     */
+
+    public function getBrancheDiffApporteur($uuidApporteur)
     {
-        // Branche de l'entreprise
-        $getbranches = Branche::pluck('id_branche')->toArray();
-
-        $result = TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
-            ->where('taux_apporteurs.id_apporteur', $id_apporteur)->pluck('branches.id_branche')->toArray();
-
-        $array = array_diff($getbranches, $result);
-
-        $branches = Branche::whereIn('id_branche', $array)->get();
-
-        return response()->json($branches);
+        try {
+            $apporteurs = $this->tauxapporteur->getBrancheDiffApporteur($uuidApporteur);
+            return $this->response->respondWithData($apporteurs, 'Les informations  ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
+
+    /*
+      |----------------------------------------------------
+      | Ajouter un taux
+      |----------------------------------------------------
+      |
+      | Cette fonction permet d'ajouter un taux 
+      |
+      | à un apporteur
+      |
+     */
 
     public function postTauxApporteur(Request $request)
     {
-        $data = $request->all();
 
+        $user = $this->getAuthenticatedUser();
+        try {
+            $data = $request->all();
+            $Data = $this->tauxapporteur->postTauxApporteur($data);
 
-        $leads = $data['accidents'];  // valeur
-        $firsts = $data['ids']; // id
-
-        $array = array_combine($firsts, $leads);
-
-        foreach ($array as $key => $value) {
-            $apporteurs = new TauxApporteur();
-            $apporteurs->taux = $value;
-            $apporteurs->id_branche = $key;
-            $apporteurs->id_apporteur = $data['id'];
-            $apporteurs->save();
+            if ($Data) {
+                return $this->response->respondWithToken($Data, $user, 'Taux apporteur ajouter avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to add.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while adding.', 500, $e->getMessage());
         }
-
-        if ($apporteurs) {
-            $apporteurs = TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
-                ->where('taux_apporteurs.id_apporteur', $data['id'])->get();
-
-            return response()->json($apporteurs);
-        }
-
-
-
-        // Insertion dans la bdd
-        // $Data = $this->apporteur->postTauxApporteur($data);
-
-        // return response()->json([
-        //     'success' => true,
-        //     'message' => 'Taux apporteur ajouté avec succès',
-        //     'compagnie' => $Data
-        // ], Response::HTTP_OK);
     }
+
+    /*
+      |----------------------------------------------------
+      | Mise à jour  d'un taux
+      |----------------------------------------------------
+      |
+      | Cette fonction permet de mettre à jour un taux 
+      |
+      | en fonction du uuid
+      |
+     */
 
     public function updateTauxApporteur(Request $request, $uuidTauxApporteur)
     {
-        $data = $request->all();
+        $user = $this->getAuthenticatedUser();
+        try {
+            $data = $request->all();
+            $Data = $this->tauxapporteur->updateTauxApporteur($data, $uuidTauxApporteur);
 
-        // $id_tauxapp = $data['id_tauxapp'];
-        $taux = $data['taux'];
-        $apporteurs = TauxApporteur::where('uuidTauxApporteur', $uuidTauxApporteur)->update(['taux' => $taux]);
-        if ($apporteurs) {
-            $apporteurs = TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
-                ->where('taux_apporteurs.uuidApporteur', $data['uuidApporteur'])->get();
-
-            return response()->json($apporteurs);
+            if ($Data) {
+                return $this->response->respondWithToken($Data, $user, 'Taux apporteur modifié avec succès.');
+            } else {
+                return $this->response->respondWithError('Failed to edit.');
+            }
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while editing.', 500, $e->getMessage());
         }
-
-        // Insertion dans la bdd
-        // $Data = $this->apporteur->updateTauxApporteur($data);
-
-        // return response()->json([
-        //     'success' => true,
-        //     'message' => 'Taux compagnie modifié avec succès',
-        //     'compagnie' => $Data
-        // ], Response::HTTP_OK);
     }
 
-    public function getApporteur()
-    {
-        $user =  JWTAuth::parseToken()->authenticate();
+    /*
+      |----------------------------------------------------
+      | Obtenir la liste des avenants de l'apporteur
+      |----------------------------------------------------
+      |
+      | Cette fonction permet de lister les avenants  
+      |
+      | de l'apporteur en fonction du uuid
+      |
+     */
 
-        $apporteurs = Apporteur::select('adresse_apporteur', 'code_apporteur', 'code_postal', 'contact_apporteur', 'email_apporteur', 'user_id as id', 'id_entreprise', 'nom_apporteur', 'supprimer_apporteur', 'sync', 'uuidApporteur')
-            // ->orderBy('id_apporteur', 'DESC')
-            ->where('id_entreprise', $user->id_entreprise)
-            // ->where('supprimer_apporteur', 0)
-            ->get();
-
-        // $apporteurs = $this->apporteur->getApporteur();
-
-        return response()->json($apporteurs);
-    }
 
     public function infoApporteur($uuidApporteur)
     {
-
-        $apporteurs = Avenant::select('*')
-            ->where('uuidApporteur', $uuidApporteur)
-            ->get();
-
-        return response()->json($apporteurs);
+        try {
+            $apporteurs = $this->avenant->infoApporteur($uuidApporteur);
+            return $this->response->respondWithData($apporteurs, 'Les informations  ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
 
+    /*
+      |----------------------------------------------------
+      | Obtenir la commission de l'apporteur
+      |----------------------------------------------------
+      |
+      | Cette fonction permet d'obtenir la commsion de l'apporteur
+      |
+      | en fonction du uuid
+      |
+     */
     public function getSommeCommissionApporteur($uuidApporteur)
     {
-        $apporteurs = Avenant::select('*')
-            ->where('uuidApporteur', $uuidApporteur)
-            ->get();
-
-        $totalCommissions = $apporteurs->sum('commission');
-
-        return response()->json($totalCommissions);
+        try {
+            $apporteurs = $this->avenant->getSommeCommissionApporteur($uuidApporteur);
+            return $this->response->respondWithData($apporteurs, 'Les informations  ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
+
+    /*
+      |----------------------------------------------------
+      | Obtenir la commission de l'apporteur
+      |----------------------------------------------------
+      |
+      | Cette fonction permet d'obtenir la commsion de l'apporteur
+      |
+      | payer en fonction du uuid
+      |
+     */
 
     public function getSommeCommissionsApporteurPayer($uuidApporteur)
     {
-        $apporteurs = Avenant::select('*')
-            ->where('uuidApporteur', $uuidApporteur)
-            ->where('payer_apporteur', '=', 1)
-            ->get();
-
-        $totalCommissions = $apporteurs->sum('commission');
-
-        return response()->json($totalCommissions);
+        try {
+            $apporteurs = $this->avenant->getSommeCommissionsApporteurPayer($uuidApporteur);
+            return $this->response->respondWithData($apporteurs, 'Les informations  ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
+
+    /*
+      |----------------------------------------------------
+      | Obtenir les avenants 
+      |----------------------------------------------------
+      |
+      | Cette fonction permet d'obtenir les avenants 
+      |
+      | en fonction du uuid
+      |
+     */
 
     public function getAvenantByUuid($uuidAvenant)
     {
-        $user =  JWTAuth::parseToken()->authenticate();
-        $avenants = Avenant::where('uuidAvenant', $uuidAvenant)->first();
-
-        return response()->json($avenants);
+        try {
+            $apporteurs = $this->avenant->getAvenantByUuid($uuidAvenant);
+            return $this->response->respondWithData($apporteurs, 'Les informations  ont été récupérés avec succès.');
+        } catch (\Exception $e) {
+            return $this->response->respondWithError('An error occurred while retrieving.', 500, $e->getMessage());
+        }
     }
 }

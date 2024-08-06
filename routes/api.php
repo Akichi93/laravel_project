@@ -116,7 +116,6 @@ Route::group([
         Route::patch('deleteapporteur/{uuidApporteur}', 'deleteApporteur'); // Supprimer un apporteur
         Route::patch('updateapporteur/{uuidApporteur}', 'updateApporteur'); // Update d'un apporteur
         Route::get('gettauxapporteur/{uuidApporteur}', 'getTauxApporteur'); // Obtenir les taux d'un apporteur
-        Route::get('gettauxapporteurs', 'getTauxApporteurs'); // Obtenir les taux d'un apporteur
         Route::get('getnameapporteur/{uuidApporteur}', 'getNameApporteur'); // Obtenir le nom de l'apporteur choisi
         Route::get('edittauxapporteur/{uuidTauxApporteur}', 'editTauxApporteur'); //Recuperer les infos d'un taux
         Route::get('getbranchediffapporteur/{uuidTauxApporteur}', 'getBrancheDiffApporteur'); // Obtenir branche
@@ -125,7 +124,6 @@ Route::group([
         Route::get('infoapporteur/{uuidApporteur}', 'infoApporteur');
         Route::get('getsommecommissionapporteur/{uuidApporteur}', 'getSommeCommissionApporteur');
         Route::get('getsommecommissionsapporteurpayer/{uuidApporteur}', 'getSommeCommissionsApporteurPayer');
-        Route::get('getapporteurs', 'getApporteur'); // Obtenir les compagnies
         Route::get('getavenantbyuuid/{uuidAvenant}', 'getAvenantByUuid');
     });
 
@@ -182,6 +180,8 @@ Route::group([
         Route::get('getclients', 'getClient');
         Route::get('gettauxcompagnies',  'getTauxCompagnies'); // Obtenir les taux des compagnies
         Route::get('getcompagnies',  'getCompagnie'); // Obtenir les compagnies
+        Route::get('gettauxapporteurs', 'getTauxApporteurs'); // Obtenir les taux d'un apporteur
+        Route::get('getapporteurs', 'getApporteur'); // Obtenir les compagnies
     });
 
     // Contrat
