@@ -75,7 +75,7 @@ class UsersController extends Controller
         $user->password = Hash::make($request->password);
         $user->contact = $request->contact;
         $user->adresse = $request->adresse;
-        $user->id_role = $request->poste;
+        $user->id_role = $request->id_role;
         $user->id_entreprise = $request->id_entreprise;
         $user->save();
 
