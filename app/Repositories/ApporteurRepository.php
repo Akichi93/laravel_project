@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use Ramsey\Uuid\Uuid;
+use App\Models\Avenant;
 use App\Models\Branche;
 use App\Models\Apporteur;
 use App\Models\TauxApporteur;
@@ -19,10 +20,14 @@ use JasonGuru\LaravelMakeRepository\Repository\BaseRepository;
 class ApporteurRepository extends BaseRepository
 {
     protected $apporteurs;
+    protected $tauxapporteurs;
+    protected $avenants;
 
-    public function __construct(Apporteur $apporteurs)
+    public function __construct(Apporteur $apporteurs, TauxApporteur $tauxapporteurs, Avenant $avenants)
     {
         $this->apporteurs = $apporteurs;
+        $this->tauxapporteurs = $tauxapporteurs;
+        $this->avenants = $avenants;
     }
     /**
      * @return string
@@ -31,6 +36,23 @@ class ApporteurRepository extends BaseRepository
     public function model()
     {
         //return YourModel::class;
+    }
+
+    public function apporteursList($data, $user)
+    {
+        // Vérifier si la clé 'q' existe dans le tableau $data
+        $query = $data['q'] ?? '';
+
+        if (!empty($query)) {
+            $apporteurs = Apporteur::where('id_entreprise', $user->id_entreprise)
+                ->where('supprimer_apporteur', '=', '0')
+                ->where('nom_apporteur', 'like', '%' . $query . '%')
+                ->get();
+        } else {
+            $apporteurs = Apporteur::where('supprimer_apporteur', '=', '0')->where('id_entreprise', $user->id_entreprise)->get();
+        }
+
+        return $apporteurs;
     }
 
     public function postApporteur(array $data)
@@ -126,32 +148,59 @@ class ApporteurRepository extends BaseRepository
 
     public function editApporteur($uuidApporteur)
     {
-        $apporteur = Apporteur::where('uuidApporteur', $uuidApporteur)->first();
-        // return response()->json($clients);
-        return $apporteur;
+        return Apporteur::where('uuidApporteur', $uuidApporteur)->first();;
     }
 
-    public function deleteApporteur(int $id_apporteur)
+    public function deleteApporteur($uuidApporteur, $user)
     {
-        $apporteurs = Apporteur::find($id_apporteur);
+        $apporteurs = Apporteur::where('uuidApporteur', $uuidApporteur)->first();
         $apporteurs->supprimer_apporteur = 1;
         $apporteurs->save();
 
-        return $apporteurs;
+        return Apporteur::where('supprimer_apporteur', '=', '0')->where('id_entreprise', $user->id_entreprise)->get();
     }
 
 
-    public function updateApporteur(int $id_apporteur)
+    public function updateApporteur($data, $uuidApporteur, $user)
     {
-        $apporteur = Apporteur::find($id_apporteur);
-        $apporteur->nom_apporteur = request('nom_apporteur');
-        $apporteur->email_apporteur = request('email_apporteur');
-        $apporteur->contact_apporteur = request('contact_apporteur');
-        $apporteur->adresse_apporteur = request('adresse_apporteur');
-        $apporteur->code_postal = request('code_postal');
+        $apporteur = Apporteur::where('uuidApporteur', $uuidApporteur)->first();
+        $apporteur->nom_apporteur = $data['nom_apporteur'];
+        $apporteur->email_apporteur = $data['email_apporteur'];
+        $apporteur->contact_apporteur = $data['contact_apporteur'];
+        $apporteur->adresse_apporteur = $data['adresse_apporteur'];
+        $apporteur->code_postal = $data['code_postal'];
         $apporteur->save();
 
-        return $apporteur;
+        return Apporteur::where('supprimer_apporteur', '=', '0')->where('id_entreprise', $user->id_entreprise)->get();;
+    }
+
+    public function getTauxApporteur($uuidApporteur, $user)
+    {
+        return TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
+            ->join("apporteurs", 'taux_apporteurs.id_apporteur', '=', 'apporteurs.id_apporteur')
+            ->where('taux_apporteurs.uuidApporteur', $uuidApporteur)
+            ->where('taux_apporteurs.id_entreprise', $user->id_entreprise)
+            ->get();
+    }
+
+    public function getNameApporteur($uuidApporteur)
+    {
+        return Apporteur::select('nom_apporteur')->where('uuidApporteur', $uuidApporteur)->first();
+    }
+
+    public function getBrancheDiffApporteur($uuidApporteur)
+    {
+        // Branche de l'entreprise
+        $getbranches = Branche::pluck('id_branche')->toArray();
+
+        $result = TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
+            ->where('taux_apporteurs.id_apporteur', $uuidApporteur)->pluck('branches.id_branche')->toArray();
+
+        $array = array_diff($getbranches, $result);
+
+        $branches = Branche::whereIn('id_branche', $array)->get();
+
+        return $branches;
     }
 
     public function editTauxApporteur($uuidTauxApporteur)
@@ -180,20 +229,30 @@ class ApporteurRepository extends BaseRepository
 
 
 
-        return $leads;
+        return TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
+            ->where('taux_apporteurs.id_apporteur', $data['id'])->get();;
     }
 
-    public function updateTauxApporteur(array $data)
+    public function updateTauxApporteur(array $data, $uuidTauxApporteur)
     {
-        $id_tauxapp = $data['id_tauxapp'];
+
+
+        // $id_tauxapp = $data['id_tauxapp'];
         $taux = $data['taux'];
-        $apporteurs = TauxApporteur::where('id_tauxapp', $id_tauxapp)->update(['taux' => $taux]);
+        $apporteurs = TauxApporteur::where('uuidTauxApporteur', $uuidTauxApporteur)->update(['taux' => $taux]);
         if ($apporteurs) {
             $apporteurs = TauxApporteur::join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
-                ->where('taux_apporteurs.id_apporteur', $data['id'])->get();
+                ->where('taux_apporteurs.uuidApporteur', $data['uuidApporteur'])->get();
 
             return $apporteurs;
         }
+    }
+
+    public function infoApporteur($uuidApporteur)
+    {
+        return Avenant::select('*')
+            ->where('uuidApporteur', $uuidApporteur)
+            ->get();
     }
 
     public function getApporteur()
@@ -203,5 +262,33 @@ class ApporteurRepository extends BaseRepository
             ->where('supprimer_apporteur', 0)->get();
 
         return $apporteurs;
+    }
+
+    public function getSommeCommissionApporteur($uuidApporteur)
+    {
+        $apporteurs = Avenant::select('*')
+            ->where('uuidApporteur', $uuidApporteur)
+            ->get();
+
+        $totalCommissions = $apporteurs->sum('commission');
+
+        return $totalCommissions;
+    }
+
+    public function getSommeCommissionsApporteurPayer($uuidApporteur)
+    {
+        $apporteurs = Avenant::select('*')
+            ->where('uuidApporteur', $uuidApporteur)
+            ->where('payer_apporteur', '=', 1)
+            ->get();
+
+        $totalCommissions = $apporteurs->sum('commission');
+
+        return $totalCommissions;
+    }
+
+    public function getAvenantByUuid($uuidAvenant)
+    {
+        return Avenant::where('uuidAvenant', $uuidAvenant)->first();
     }
 }
