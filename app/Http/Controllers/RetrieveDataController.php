@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Apporteur;
 use App\Models\Compagnie;
 use Illuminate\Http\Request;
+use App\Models\TauxApporteur;
 use App\Models\TauxCompagnie;
 use App\Repositories\ClientRepository;
 use App\Http\Traits\AuthenticatesUsers;
@@ -55,5 +57,27 @@ class RetrieveDataController extends Controller
             ->get();
 
         return response()->json($compagnies);
+    }
+
+    public function getApporteur()
+    {
+        $user = $this->getAuthenticatedUser();
+
+        $apporteurs = Apporteur::select('adresse_apporteur', 'code_apporteur', 'code_postal', 'contact_apporteur', 'email_apporteur', 'user_id as id', 'id_entreprise', 'nom_apporteur', 'supprimer_apporteur', 'sync', 'uuidApporteur') 
+            ->where('id_entreprise', $user->id_entreprise)
+            ->get();
+
+        return response()->json($apporteurs);
+    }
+
+    public function getTauxApporteurs()
+    {
+        $user = $this->getAuthenticatedUser();
+        $apporteurs = TauxApporteur::select('uuidTauxApporteur', 'apporteurs.uuidApporteur', 'taux_apporteurs.sync', 'taux', 'branches.nom_branche', 'taux_apporteurs.id_entreprise', 'branches.uuidBranche')
+            ->join("branches", 'taux_apporteurs.id_branche', '=', 'branches.id_branche')
+            ->join("apporteurs", 'taux_apporteurs.id_apporteur', '=', 'apporteurs.id_apporteur')
+            ->where('taux_apporteurs.id_entreprise', $user->id_entreprise)
+            ->get();
+        return response()->json($apporteurs);
     }
 }
